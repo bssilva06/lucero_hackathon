@@ -1,0 +1,52 @@
+# Environment
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+dist/
+build/
+*.egg-info/
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Vite / frontend
+frontend/dist/
+frontend/.vite/
+
+# Coverage and test output
+coverage/
+.coverage
+htmlcov/
+test-results/
+playwright-report/
+
+# Local data and generated artifacts
+data/
+tmp/
+*.log
+*.sqlite
+*.db
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Secrets and service accounts
+*service-account*.json
+gcloud-*.json
+secrets/

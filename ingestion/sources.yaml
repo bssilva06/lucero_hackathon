@@ -1,0 +1,42 @@
+# MVP source manifest. URLs and parser details will be filled during ingestion implementation.
+sources:
+  - id: uscis-policy-manual-vol9-ptb
+    name: USCIS Policy Manual Volume 9 Part B
+    type: policy_manual
+    agency: USCIS
+    status: planned
+  - id: uscis-policy-manual-vol9-ptc
+    name: USCIS Policy Manual Volume 9 Part C
+    type: policy_manual
+    agency: USCIS
+    status: planned
+  - id: uscis-policy-manual-vol6-ptb
+    name: USCIS Policy Manual Volume 6 Part B
+    type: policy_manual
+    agency: USCIS
+    status: planned
+  - id: form-i-601a-instructions
+    name: Form I-601A Instructions
+    type: form_instructions
+    agency: USCIS
+    status: planned
+  - id: form-i-130-instructions
+    name: Form I-130 Instructions
+    type: form_instructions
+    agency: USCIS
+    status: planned
+  - id: visa-bulletins-last-3
+    name: Last 3 Visa Bulletins
+    type: visa_bulletin
+    agency: DOS
+    status: planned
+  - id: cdj-consular-post-info
+    name: Ciudad Juarez Consular Post Information
+    type: fam
+    agency: DOS
+    status: planned
+  - id: g-1055-fee-schedule
+    name: USCIS G-1055 Fee Schedule
+    type: fee_schedule
+    agency: USCIS
+    status: planned
