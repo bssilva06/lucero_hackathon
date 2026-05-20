@@ -6,7 +6,8 @@ Lucero is a bilingual research co-pilot for immigration legal teams focused on I
 
 - Workspace contains the PRD: `lucero-prd-v1.1-updated.md`.
 - Phase 0 repository bootstrap files have been created.
-- No application runtime code has been created yet.
+- Phase 1 local smoke-test scripts have been created.
+- No application runtime agent code has been created yet.
 - MVP target is a hackathon submission using Google ADK, Gemini 3.1, MongoDB Atlas, MongoDB MCP, Atlas Automated Embedding with Voyage, and a React/Vite/Tailwind frontend.
 - Current date at initialization: 2026-05-16.
 
@@ -37,9 +38,11 @@ Build a citation-first bilingual legal research tool for licensed immigration pr
 
 ### Phase 1: Cloud and Database Smoke Tests
 
-- Create or confirm the GCP project and enable required APIs for ADK/Gemini, Cloud Run, Secret Manager, and Artifact Registry.
-- Create or confirm an Atlas M10 cluster in the target region.
+- [x] Create or confirm the GCP project and enable required APIs for ADK/Gemini, Cloud Run, Secret Manager, and Artifact Registry.
+- [x] Create or confirm an Atlas M10 cluster in the target region.
 - Verify Atlas Automated Embedding availability on the target cluster.
+- [x] Smoke test basic MongoDB Atlas connectivity.
+- [x] Smoke test local MongoDB MCP server launch.
 - Smoke test MongoDB version and `$rankFusion` support with a small throwaway collection.
 - Record the result in this file and set the retrieval path:
   - Primary: Atlas Automated Embedding + `$rankFusion`.
@@ -173,24 +176,32 @@ Refusal canaries:
 - 2026-05-16: Initialized project memory from PRD v1.1. No implementation started.
 - 2026-05-16: Primary architecture follows PRD: Google ADK + Gemini + MongoDB Atlas + MongoDB MCP + React/Vite/Tailwind.
 - 2026-05-16: Chose Python 3.11+ for backend, `uv` preferred with `pip` fallback, Node.js 20+ and `npm` for frontend bootstrap.
+- 2026-05-19: Local Python runtime is 3.13.2; Node.js is 22.14.0; `npx` is 11.6.2.
+- 2026-05-19: Atlas connection works. Cluster reports MongoDB server version 8.0.23, so `$rankFusion` Preview support remains unconfirmed and may require Atlas upgrade/preview availability or `$vectorSearch` fallback.
 
 ## Progress Log
 
 - 2026-05-16: Read PRD and created this working tracker.
 - 2026-05-16: Completed Phase 0 bootstrap with `README.md`, `LICENSE`, `.gitignore`, `.env.example`, backend/frontend/ingestion/evals/docs folders, source manifest, eval prompt file, and architecture/demo notes.
+- 2026-05-19: Added backend config loader and Phase 1 smoke tests for env vars, Atlas connectivity, and MongoDB MCP launch.
+- 2026-05-19: Installed backend smoke-test dependencies in `backend/.venv`.
+- 2026-05-19: Environment smoke test passed.
+- 2026-05-19: Atlas smoke test passed; database `lucero` reachable; no collections exist yet.
+- 2026-05-19: MongoDB MCP local launch smoke test passed.
 
 ## Open Questions
 
-- Which Google Cloud project and billing account should be used?
-- Has the hackathon Atlas cluster already been created, or should setup start from scratch?
+- Confirm the exact Google Cloud project id and enabled APIs if Gemini/ADK smoke tests fail.
+- Confirm whether the Atlas cluster can be upgraded to MongoDB 8.1+ or has `$rankFusion` preview support despite reporting 8.0.23.
+- Confirm whether Atlas Automated Embedding is available in the current cluster/project.
 - Should the initial implementation optimize for local demo reliability first, then Cloud Run, or deploy early and iterate in production?
 - Is there already a preferred public GitHub repository name and organization?
 - Which frontend hosting path is preferred: Cloud Run for both backend/frontend, or Firebase Hosting for frontend?
 
 ## Current Next Actions
 
-1. Initialize git if desired.
-2. Scaffold backend ADK hello-world agent.
-3. Smoke test MongoDB MCP locally.
-4. Create ingestion fixture format and first source parser.
-5. Start Phase 1 cloud/database smoke-test checklist once Atlas and GCP details are available.
+1. Add Gemini/Vertex availability smoke test.
+2. Create a small Atlas fixture collection and smoke test basic vector/search index prerequisites.
+3. Confirm Atlas Automated Embedding availability manually in Atlas UI or via Atlas Admin/API path.
+4. Decide whether to pursue MongoDB 8.1+ for `$rankFusion` or proceed with `$vectorSearch` fallback.
+5. Scaffold backend ADK hello-world agent once Gemini access is confirmed.
