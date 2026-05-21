@@ -52,7 +52,7 @@ def load_settings() -> Settings:
         ),
         mongo_query_logs_collection=os.getenv("MONGO_QUERY_LOGS_COLLECTION", "query_logs"),
         use_rank_fusion=_bool("LUCERO_USE_RANK_FUSION", default=True),
-        use_atlas_automated_embedding=_bool("LUCERO_USE_ATLAS_AUTOMATED_EMBEDDING", default=True),
+        use_atlas_automated_embedding=_bool("LUCERO_USE_ATLAS_AUTOMATED_EMBEDDING", default=False),
         vector_index=os.getenv("LUCERO_VECTOR_INDEX", "vector_autoembed_index"),
         fts_index=os.getenv("LUCERO_FTS_INDEX", "fts_index"),
         voyage_api_key=os.getenv("VOYAGE_API_KEY") or None,

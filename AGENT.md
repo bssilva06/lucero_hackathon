@@ -44,14 +44,14 @@ Build a citation-first bilingual legal research tool for licensed immigration pr
 
 - [x] Create or confirm the GCP project and enable required APIs for ADK/Gemini, Cloud Run, Secret Manager, and Artifact Registry.
 - [x] Create or confirm an Atlas M10 cluster in the target region.
-- Verify Atlas Automated Embedding availability on the target cluster.
+- [x] Verify Atlas Automated Embedding availability on the target cluster.
 - [x] Smoke test basic MongoDB Atlas connectivity.
 - [x] Smoke test local MongoDB MCP server launch.
-- Smoke test MongoDB version and `$rankFusion` support with a small throwaway collection.
+- [x] Smoke test MongoDB version and `$rankFusion` support with a small throwaway collection.
 - Record the result in this file and set the retrieval path:
-  - Primary: Atlas Automated Embedding + `$rankFusion`.
-  - Fallback A: Atlas Automated Embedding + `$vectorSearch`.
-  - Fallback B: client-side Voyage embeddings + `$vectorSearch`, while preserving MCP traces.
+  - Primary: client-side Voyage embeddings + `$rankFusion`.
+  - Fallback A: client-side Voyage embeddings + `$vectorSearch`, while preserving MCP traces.
+  - Fallback B: keyword/full-text retrieval through MongoDB MCP for demo continuity.
 
 ### Phase 2: Backend Skeleton
 
@@ -182,7 +182,9 @@ Refusal canaries:
 - 2026-05-16: Primary architecture follows PRD: Google ADK + Gemini + MongoDB Atlas + MongoDB MCP + React/Vite/Tailwind.
 - 2026-05-16: Chose Python 3.11+ for backend, `uv` preferred with `pip` fallback, Node.js 20+ and `npm` for frontend bootstrap.
 - 2026-05-19: Local Python runtime is 3.13.2; Node.js is 22.14.0; `npx` is 11.6.2.
-- 2026-05-19: Atlas connection works. Cluster reports MongoDB server version 8.0.23, so `$rankFusion` Preview support remains unconfirmed and may require Atlas upgrade/preview availability or `$vectorSearch` fallback.
+- 2026-05-19: Atlas connection works. Cluster reports MongoDB server version 8.0.23.
+- 2026-05-21: MongoDB docs currently list Automated Embedding `autoEmbed` as unavailable for Atlas clusters, so Lucero will use client-side Voyage embeddings for Atlas.
+- 2026-05-21: `$rankFusion` smoke test passed against the configured Atlas cluster using a throwaway collection and two sorted selection pipelines.
 - 2026-05-20: MCP stdio startup must avoid first-run `npx` download/warning output; default launch path is `npx --no-install mongodb-mcp-server --readOnly`.
 - 2026-05-20: ADK runners use `auto_create_session=True` for local CLI and FastAPI in-memory sessions.
 - 2026-05-20: Do not log full MongoDB connection strings; logs must redact secrets.
@@ -228,8 +230,9 @@ Refusal canaries:
 
 ## Current Next Actions
 
-1. Confirm Atlas Automated Embedding availability manually in Atlas UI or via Atlas Admin/API path.
-2. Decide whether to pursue MongoDB 8.1+ for `$rankFusion` or proceed with `$vectorSearch` fallback.
-3. Start the first ingestion parser now that fixture retrieval is working.
-4. Replace synthetic fixtures with real ingested source chunks before any substantive legal demo.
-5. Build a canonical `search_uscis_policy_manual` FunctionTool around the eventual real chunks collection.
+1. Add client-side Voyage embedding generation to the ingestion path.
+2. Create Atlas Search and Vector Search indexes for the real chunks collection.
+3. Implement hybrid retrieval with `$rankFusion`, guarded by the existing feature flag.
+4. Start the first ingestion parser now that fixture retrieval is working.
+5. Replace synthetic fixtures with real ingested source chunks before any substantive legal demo.
+6. Build a canonical `search_uscis_policy_manual` FunctionTool around the eventual real chunks collection.

@@ -69,6 +69,16 @@ cd C:\Users\trash\Documents\Lucero\backend
 python -m app.smoke_tests.mcp_retrieval
 ```
 
+## `$rankFusion` Check
+
+This inserts three throwaway documents into a private smoke-test collection and runs a minimal `$rankFusion` aggregation. It does not require search/vector indexes; it only confirms whether the aggregation stage is accepted by the configured Atlas cluster.
+
+```powershell
+cd C:\Users\trash\Documents\Lucero\backend
+.\.venv\Scripts\Activate.ps1
+python -m app.smoke_tests.rankfusion
+```
+
 ## Gemini / Vertex Check
 
 The smoke test tries `GEMINI_REASONING_MODEL` first. If that model is unavailable in the configured Vertex region, it tries current stable fallback candidates and prints the `.env` value to use.
@@ -116,6 +126,7 @@ python -m app.smoke_tests.api_chat_retrieval
 - `mcp` should find `npx` and confirm the MCP server can launch.
 - `seed_fixtures` should upsert 3 fixture source chunks.
 - `mcp_retrieval` should confirm both `find` and `aggregate` can retrieve fixture data through MCP.
+- `rankfusion` should confirm `$rankFusion` can run on the configured Atlas cluster.
 - `gemini` should receive a short response from the configured Gemini model.
 - `api_health` should receive `{"app": "Lucero ADK Backend", "status": "ok"}`.
 - `api_chat` should receive a non-empty response from `/api/chat`.
@@ -123,8 +134,10 @@ python -m app.smoke_tests.api_chat_retrieval
 
 ## What This Does Not Prove Yet
 
-- `$rankFusion` support.
-- Atlas Automated Embedding availability.
 - Vector and full-text search indexes.
 
 Those require the first ingestion/index fixture and the ADK backend skeleton.
+
+## Atlas Automated Embedding Note
+
+MongoDB's current Automated Embedding documentation says `autoEmbed` is a Preview feature for MongoDB Community Edition 8.2+ Search/Vector Search deployments, and lists Atlas clusters as unsupported. For this Atlas-backed MVP, use client-side Voyage embeddings plus Atlas Vector Search unless MongoDB enables Atlas support for the project.
