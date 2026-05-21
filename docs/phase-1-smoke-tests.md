@@ -49,17 +49,38 @@ cd C:\Users\trash\Documents\Lucero\backend
 python -m app.smoke_tests.mcp
 ```
 
+## Gemini / Vertex Check
+
+The smoke test tries `GEMINI_REASONING_MODEL` first. If that model is unavailable in the configured Vertex region, it tries current stable fallback candidates and prints the `.env` value to use.
+
+```powershell
+cd C:\Users\trash\Documents\Lucero\backend
+.\.venv\Scripts\Activate.ps1
+python -m app.smoke_tests.gemini
+```
+
+## FastAPI Health Check
+
+This starts the backend on `127.0.0.1:8080`, waits for `/api/health`, then shuts the process down.
+
+```powershell
+cd C:\Users\trash\Documents\Lucero\backend
+.\.venv\Scripts\Activate.ps1
+python -m app.smoke_tests.api_health
+```
+
 ## Expected Result
 
 - `env` should show `PASS` for all required variables.
 - `atlas` should connect and print the server version.
 - `mcp` should find `npx` and confirm the MCP server can launch.
+- `gemini` should receive a short response from the configured Gemini model.
+- `api_health` should receive `{"app": "Lucero ADK Backend", "status": "ok"}`.
 
 ## What This Does Not Prove Yet
 
 - `$rankFusion` support.
 - Atlas Automated Embedding availability.
 - Vector and full-text search indexes.
-- Gemini model availability.
 
 Those require the first ingestion/index fixture and the ADK backend skeleton.
