@@ -49,6 +49,26 @@ cd C:\Users\trash\Documents\Lucero\backend
 python -m app.smoke_tests.mcp
 ```
 
+## Atlas Fixture Seed
+
+This inserts a tiny deterministic fixture corpus into the configured `chunks` collection. The documents are synthetic and are only for connectivity/tooling verification.
+
+```powershell
+cd C:\Users\trash\Documents\Lucero\backend
+.\.venv\Scripts\Activate.ps1
+python -m app.smoke_tests.seed_fixtures
+```
+
+## MongoDB MCP Retrieval Check
+
+Run this after seeding fixtures. It calls the MongoDB MCP `find` and `aggregate` tools against the fixture documents.
+
+```powershell
+cd C:\Users\trash\Documents\Lucero\backend
+.\.venv\Scripts\Activate.ps1
+python -m app.smoke_tests.mcp_retrieval
+```
+
 ## Gemini / Vertex Check
 
 The smoke test tries `GEMINI_REASONING_MODEL` first. If that model is unavailable in the configured Vertex region, it tries current stable fallback candidates and prints the `.env` value to use.
@@ -84,6 +104,8 @@ python -m app.smoke_tests.api_chat
 - `env` should show `PASS` for all required variables.
 - `atlas` should connect and print the server version.
 - `mcp` should find `npx` and confirm the MCP server can launch.
+- `seed_fixtures` should upsert 3 fixture source chunks.
+- `mcp_retrieval` should confirm both `find` and `aggregate` can retrieve fixture data through MCP.
 - `gemini` should receive a short response from the configured Gemini model.
 - `api_health` should receive `{"app": "Lucero ADK Backend", "status": "ok"}`.
 - `api_chat` should receive a non-empty response from `/api/chat`.
