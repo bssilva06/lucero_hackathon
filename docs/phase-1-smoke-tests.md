@@ -99,6 +99,16 @@ cd C:\Users\trash\Documents\Lucero\backend
 python -m app.smoke_tests.api_chat
 ```
 
+## FastAPI Chat Retrieval Check
+
+Run this after `seed_fixtures` and `mcp_retrieval`. It asks the agent to use MongoDB MCP tools through `/api/chat` and fails if no tool call is captured.
+
+```powershell
+cd C:\Users\trash\Documents\Lucero\backend
+.\.venv\Scripts\Activate.ps1
+python -m app.smoke_tests.api_chat_retrieval
+```
+
 ## Expected Result
 
 - `env` should show `PASS` for all required variables.
@@ -109,6 +119,7 @@ python -m app.smoke_tests.api_chat
 - `gemini` should receive a short response from the configured Gemini model.
 - `api_health` should receive `{"app": "Lucero ADK Backend", "status": "ok"}`.
 - `api_chat` should receive a non-empty response from `/api/chat`.
+- `api_chat_retrieval` should receive a non-empty response and at least one captured MongoDB MCP tool call.
 
 ## What This Does Not Prove Yet
 

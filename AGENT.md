@@ -11,6 +11,7 @@ Lucero is a bilingual research co-pilot for immigration legal teams focused on I
 - Gemini/Vertex and FastAPI health smoke tests exist and pass locally.
 - FastAPI `/api/chat` smoke test exists and passes locally with `gemini-2.5-pro`.
 - Atlas fixture chunks exist in the `chunks` collection and MongoDB MCP `find` / `aggregate` retrieval has been verified locally.
+- Agent-level `/api/chat` retrieval smoke test exists and passes, requiring an MCP tool call plus fixture citation/text grounding.
 - MVP target is a hackathon submission using Google ADK, Gemini 3.1, MongoDB Atlas, MongoDB MCP, Atlas Automated Embedding with Voyage, and a React/Vite/Tailwind frontend.
 - Current date at initialization: 2026-05-16.
 
@@ -189,6 +190,7 @@ Refusal canaries:
 - 2026-05-20: User chose `gemini-2.5-pro` as the reasoning model; `/api/chat` smoke test passed with it.
 - 2026-05-20: Seeded synthetic fixture chunks into Atlas `lucero.chunks` for smoke testing. These are not legal authority and must not be used in the final corpus.
 - 2026-05-20: MongoDB MCP `find` and `aggregate` calls successfully retrieved fixture data from Atlas.
+- 2026-05-20: Agent-level retrieval smoke test uses the exact fixture filter `{"ingestion_run_id":"fixture-smoke-test","status":"active"}` to avoid schema inference drift.
 
 ## Progress Log
 
@@ -212,6 +214,8 @@ Refusal canaries:
 - 2026-05-20: Added fixture seed script and MCP retrieval smoke test.
 - 2026-05-20: Seeded 3 fixture chunks into Atlas.
 - 2026-05-20: MCP retrieval smoke test passed; `find` returned fixture docs and `aggregate` returned agency groups.
+- 2026-05-20: Added FastAPI `/api/chat` retrieval smoke test.
+- 2026-05-20: FastAPI `/api/chat` retrieval smoke test passed; captured MCP `find` and returned known fixture citation/text.
 
 ## Open Questions
 
@@ -224,8 +228,8 @@ Refusal canaries:
 
 ## Current Next Actions
 
-1. Add an `/api/chat` retrieval smoke test that requires at least one MCP tool call.
-2. Confirm Atlas Automated Embedding availability manually in Atlas UI or via Atlas Admin/API path.
-3. Decide whether to pursue MongoDB 8.1+ for `$rankFusion` or proceed with `$vectorSearch` fallback.
-4. Start the first ingestion parser once fixture retrieval is working.
-5. Replace synthetic fixtures with real ingested source chunks before any substantive legal demo.
+1. Confirm Atlas Automated Embedding availability manually in Atlas UI or via Atlas Admin/API path.
+2. Decide whether to pursue MongoDB 8.1+ for `$rankFusion` or proceed with `$vectorSearch` fallback.
+3. Start the first ingestion parser now that fixture retrieval is working.
+4. Replace synthetic fixtures with real ingested source chunks before any substantive legal demo.
+5. Build a canonical `search_uscis_policy_manual` FunctionTool around the eventual real chunks collection.
