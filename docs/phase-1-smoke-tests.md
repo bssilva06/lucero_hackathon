@@ -69,6 +69,16 @@ cd C:\Users\trash\Documents\Lucero\backend
 python -m app.smoke_tests.api_health
 ```
 
+## FastAPI Chat Check
+
+This starts the backend, posts a non-legal diagnostic request to `/api/chat`, then shuts the process down. Run this only after `python -m app.smoke_tests.gemini` confirms the configured model works.
+
+```powershell
+cd C:\Users\trash\Documents\Lucero\backend
+.\.venv\Scripts\Activate.ps1
+python -m app.smoke_tests.api_chat
+```
+
 ## Expected Result
 
 - `env` should show `PASS` for all required variables.
@@ -76,6 +86,7 @@ python -m app.smoke_tests.api_health
 - `mcp` should find `npx` and confirm the MCP server can launch.
 - `gemini` should receive a short response from the configured Gemini model.
 - `api_health` should receive `{"app": "Lucero ADK Backend", "status": "ok"}`.
+- `api_chat` should receive a non-empty response from `/api/chat`.
 
 ## What This Does Not Prove Yet
 

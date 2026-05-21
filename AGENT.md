@@ -9,6 +9,7 @@ Lucero is a bilingual research co-pilot for immigration legal teams focused on I
 - Phase 1 local smoke-test scripts have been created.
 - Backend ADK/FastAPI skeleton exists with MongoDB MCP toolset wiring.
 - Gemini/Vertex and FastAPI health smoke tests exist and pass locally.
+- FastAPI `/api/chat` smoke test exists and passes locally with `gemini-2.5-pro`.
 - MVP target is a hackathon submission using Google ADK, Gemini 3.1, MongoDB Atlas, MongoDB MCP, Atlas Automated Embedding with Voyage, and a React/Vite/Tailwind frontend.
 - Current date at initialization: 2026-05-16.
 
@@ -184,6 +185,7 @@ Refusal canaries:
 - 2026-05-20: ADK runners use `auto_create_session=True` for local CLI and FastAPI in-memory sessions.
 - 2026-05-20: Do not log full MongoDB connection strings; logs must redact secrets.
 - 2026-05-20: `gemini-3.5-flash` is unavailable in Vertex `us-central1` for the current project; smoke test found `gemini-2.5-flash` works. Update local `.env` before chat testing.
+- 2026-05-20: User chose `gemini-2.5-pro` as the reasoning model; `/api/chat` smoke test passed with it.
 
 ## Progress Log
 
@@ -202,6 +204,8 @@ Refusal canaries:
 - 2026-05-20: Gemini/Vertex smoke test passed with `gemini-2.5-flash`.
 - 2026-05-20: Added FastAPI health smoke test that boots Uvicorn, checks `/api/health`, and shuts down.
 - 2026-05-20: FastAPI health smoke test passed.
+- 2026-05-20: Added reusable smoke-test server helper and FastAPI `/api/chat` smoke test.
+- 2026-05-20: FastAPI `/api/chat` smoke test passed with `gemini-2.5-pro`; no tool calls expected for the diagnostic prompt.
 
 ## Open Questions
 
@@ -214,8 +218,8 @@ Refusal canaries:
 
 ## Current Next Actions
 
-1. Update local `.env` to `GEMINI_REASONING_MODEL=gemini-2.5-flash` unless a stronger Gemini model is confirmed available.
-2. Add `/api/chat` smoke test after model config is updated.
-3. Create a small Atlas fixture collection and smoke test MCP `find` / `aggregate`.
-4. Confirm Atlas Automated Embedding availability manually in Atlas UI or via Atlas Admin/API path.
-5. Decide whether to pursue MongoDB 8.1+ for `$rankFusion` or proceed with `$vectorSearch` fallback.
+1. Create a small Atlas fixture collection and smoke test MCP `find` / `aggregate`.
+2. Add an `/api/chat` retrieval smoke test that requires at least one MCP tool call.
+3. Confirm Atlas Automated Embedding availability manually in Atlas UI or via Atlas Admin/API path.
+4. Decide whether to pursue MongoDB 8.1+ for `$rankFusion` or proceed with `$vectorSearch` fallback.
+5. Start the first ingestion parser once fixture retrieval is working.
