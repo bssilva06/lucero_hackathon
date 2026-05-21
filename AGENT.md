@@ -7,7 +7,7 @@ Lucero is a bilingual research co-pilot for immigration legal teams focused on I
 - Workspace contains the PRD: `lucero-prd-v1.1-updated.md`.
 - Phase 0 repository bootstrap files have been created.
 - Phase 1 local smoke-test scripts have been created.
-- No application runtime agent code has been created yet.
+- Backend ADK/FastAPI skeleton exists with MongoDB MCP toolset wiring.
 - MVP target is a hackathon submission using Google ADK, Gemini 3.1, MongoDB Atlas, MongoDB MCP, Atlas Automated Embedding with Voyage, and a React/Vite/Tailwind frontend.
 - Current date at initialization: 2026-05-16.
 
@@ -51,11 +51,12 @@ Build a citation-first bilingual legal research tool for licensed immigration pr
 
 ### Phase 2: Backend Skeleton
 
-- Scaffold a Python ADK backend.
-- Create a hello-world Gemini agent using `gemini-3.1-pro-preview`, or the closest available Gemini 3 model if the named preview model is unavailable.
-- Wire the MongoDB MCP server locally with read-only access for source collections.
-- Add a minimal HTTP endpoint for frontend calls.
-- Add basic request logging and structured tool trace output.
+- [x] Scaffold a Python ADK backend.
+- [x] Create a hello-world Gemini agent using the available Gemini model configured in `.env`.
+- [x] Wire the MongoDB MCP server locally with read-only access for source collections.
+- [x] Add a minimal HTTP endpoint for frontend calls.
+- [x] Add basic request logging and structured tool trace output.
+- Harden MCP startup and session handling.
 
 ### Phase 3: Ingestion Pipeline
 
@@ -178,6 +179,9 @@ Refusal canaries:
 - 2026-05-16: Chose Python 3.11+ for backend, `uv` preferred with `pip` fallback, Node.js 20+ and `npm` for frontend bootstrap.
 - 2026-05-19: Local Python runtime is 3.13.2; Node.js is 22.14.0; `npx` is 11.6.2.
 - 2026-05-19: Atlas connection works. Cluster reports MongoDB server version 8.0.23, so `$rankFusion` Preview support remains unconfirmed and may require Atlas upgrade/preview availability or `$vectorSearch` fallback.
+- 2026-05-20: MCP stdio startup must avoid first-run `npx` download/warning output; default launch path is `npx --no-install mongodb-mcp-server --readOnly`.
+- 2026-05-20: ADK runners use `auto_create_session=True` for local CLI and FastAPI in-memory sessions.
+- 2026-05-20: Do not log full MongoDB connection strings; logs must redact secrets.
 
 ## Progress Log
 
@@ -188,6 +192,10 @@ Refusal canaries:
 - 2026-05-19: Environment smoke test passed.
 - 2026-05-19: Atlas smoke test passed; database `lucero` reachable; no collections exist yet.
 - 2026-05-19: MongoDB MCP local launch smoke test passed.
+- 2026-05-20: Backend ADK CLI and FastAPI skeleton added.
+- 2026-05-20: Patched MCP launcher configuration, removed full connection-string logging, and documented ADK/MCP troubleshooting.
+- 2026-05-20: Backend compile check passed.
+- 2026-05-20: MCP smoke test passed using configured `--no-install` launch path.
 
 ## Open Questions
 
@@ -200,8 +208,8 @@ Refusal canaries:
 
 ## Current Next Actions
 
-1. Add Gemini/Vertex availability smoke test.
-2. Create a small Atlas fixture collection and smoke test basic vector/search index prerequisites.
-3. Confirm Atlas Automated Embedding availability manually in Atlas UI or via Atlas Admin/API path.
-4. Decide whether to pursue MongoDB 8.1+ for `$rankFusion` or proceed with `$vectorSearch` fallback.
-5. Scaffold backend ADK hello-world agent once Gemini access is confirmed.
+1. Add a committed Gemini/Vertex availability smoke test.
+2. Add a committed backend health/API smoke test for FastAPI.
+3. Create a small Atlas fixture collection and smoke test basic search/vector prerequisites.
+4. Confirm Atlas Automated Embedding availability manually in Atlas UI or via Atlas Admin/API path.
+5. Decide whether to pursue MongoDB 8.1+ for `$rankFusion` or proceed with `$vectorSearch` fallback.

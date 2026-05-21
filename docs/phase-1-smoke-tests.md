@@ -10,6 +10,7 @@ These checks verify the local credentials and MongoDB Atlas setup without commit
 - Atlas database user exists.
 - Your current IP is on the Atlas Network Access list.
 - Node.js 20+ is installed for `npx` and the MongoDB MCP server.
+- `mongodb-mcp-server` has been installed ahead of time so `npx --no-install` can launch it without package-manager output on stdio.
 
 ## Install Backend Dependencies
 
@@ -40,7 +41,7 @@ python -m app.smoke_tests.atlas
 
 ## MongoDB MCP Launch Check
 
-This command uses `npx`, which may download `mongodb-mcp-server` the first time.
+This command uses the configured MCP launcher. By default, Lucero uses `npx --no-install mongodb-mcp-server --readOnly` to avoid first-run package-manager warnings corrupting MCP stdio.
 
 ```powershell
 cd C:\Users\trash\Documents\Lucero\backend

@@ -13,12 +13,13 @@ def main() -> int:
     print("Lucero Phase 1 MongoDB MCP smoke test")
     print("-------------------------------------")
 
-    npx_path = shutil.which("npx")
-    if not npx_path:
-        print("FAIL npx was not found. Install Node.js 20+ before testing MongoDB MCP.")
+    command_path = shutil.which(settings.mcp_command)
+    if not command_path:
+        print(f"FAIL {settings.mcp_command} was not found.")
+        print("     Install Node.js 20+ and globally install mongodb-mcp-server, or set LUCERO_MCP_COMMAND.")
         return 1
 
-    print(f"PASS npx found: {npx_path}")
+    print(f"PASS MCP launcher found: {command_path}")
     print("Starting MongoDB MCP server briefly to verify it can launch...")
 
     env = os.environ.copy()
@@ -26,7 +27,7 @@ def main() -> int:
 
     try:
         process = subprocess.Popen(
-            [npx_path, "-y", "mongodb-mcp-server", "--readOnly"],
+            [command_path, *settings.mcp_args],
             env=env,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,

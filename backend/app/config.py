@@ -28,6 +28,10 @@ class Settings:
     vector_index: str
     fts_index: str
     voyage_api_key: str | None
+    gemini_reasoning_model: str
+    gemini_translation_model: str
+    mcp_command: str
+    mcp_args: list[str]
 
 
 def load_settings() -> Settings:
@@ -52,6 +56,10 @@ def load_settings() -> Settings:
         vector_index=os.getenv("LUCERO_VECTOR_INDEX", "vector_autoembed_index"),
         fts_index=os.getenv("LUCERO_FTS_INDEX", "fts_index"),
         voyage_api_key=os.getenv("VOYAGE_API_KEY") or None,
+        gemini_reasoning_model=os.getenv("GEMINI_REASONING_MODEL", "gemini-3.5-flash"),
+        gemini_translation_model=os.getenv("GEMINI_TRANSLATION_MODEL", "gemini-3.5-flash"),
+        mcp_command=os.getenv("LUCERO_MCP_COMMAND", "npx"),
+        mcp_args=_csv("LUCERO_MCP_ARGS", ["--no-install", "mongodb-mcp-server", "--readOnly"]),
     )
 
 
@@ -67,3 +75,18 @@ def _bool(name: str, *, default: bool) -> bool:
     if value is None:
         return default
     return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _csv(name: str, default: list[str]) -> list[str]:
+    value = os.getenv(name)
+    if not value:
+        return default
+    return [part.strip() for part in value.split(",") if part.strip()]
+
+
+def redact_secret(value: str, *, visible_prefix: int = 12) -> str:
+    if not value:
+        return "(empty)"
+    if len(value) <= visible_prefix:
+        return "***"
+    return f"{value[:visible_prefix]}..."
