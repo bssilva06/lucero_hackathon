@@ -222,6 +222,9 @@ Refusal canaries:
 - 2026-05-21: Voyage fixture embedding smoke test passed; 3 fixture chunks in Atlas were updated with 1024-dimensional embeddings.
 - 2026-05-24: Added Atlas Search index setup script; created `vector_autoembed_index` and `fts_index` on `lucero.chunks`, both READY/queryable.
 - 2026-05-24: Added shared Voyage embedding helper and hybrid retrieval smoke test; `$vectorSearch`, `$search`, and `$rankFusion` all ranked the I-601A hardship fixture first.
+- 2026-05-24: Extracted hybrid retrieval into `app.retrieval`, added citation-ready `search_uscis_policy_manual`, and registered it as an ADK `FunctionTool` alongside MongoDB MCP tools.
+- 2026-05-24: Added USCIS Policy Manual HTML ingestion for Volume 9 Part B and current Part H; live run upserted 67 real USCIS chunks with 1024-dimensional Voyage embeddings.
+- 2026-05-24: Production `search_uscis_policy_manual` excludes `fixture-smoke-test` chunks by default; real retrieval smoke test returns USCIS Policy Manual B/H citations only.
 
 ## Open Questions
 
@@ -234,7 +237,7 @@ Refusal canaries:
 
 ## Current Next Actions
 
-1. Implement the canonical `search_uscis_policy_manual` backend retrieval helper/tool from the proven smoke pipeline.
-2. Start the first ingestion parser now that fixture retrieval, embeddings, and indexes are working.
-3. Replace synthetic fixtures with real ingested source chunks before any substantive legal demo.
-4. Wire the canonical retrieval helper into the ADK agent and source-panel response shape.
+1. Wire retrieved source chunks into the FastAPI response/source-panel shape.
+2. Add the next real corpus parser: USCIS Policy Manual Volume 9 Part A or Form I-601A instructions.
+3. Harden MCP lifecycle cleanup so local bootstrap checks do not hang on orphaned MCP subprocesses.
+4. Add eval prompts against the real USCIS Policy Manual chunks.

@@ -4,12 +4,16 @@ sources:
     name: USCIS Policy Manual Volume 9 Part B
     type: policy_manual
     agency: USCIS
-    status: planned
-  - id: uscis-policy-manual-vol9-ptc
-    name: USCIS Policy Manual Volume 9 Part C
+    url: https://www.uscis.gov/policy-manual/volume-9-part-b-chapter-1
+    parser: uscis_policy_manual_html_v1
+    status: implemented
+  - id: uscis-policy-manual-vol9-pth
+    name: USCIS Policy Manual Volume 9 Part H
     type: policy_manual
     agency: USCIS
-    status: planned
+    url: https://www.uscis.gov/policy-manual/volume-9-part-h
+    parser: uscis_policy_manual_html_v1
+    status: implemented
   - id: uscis-policy-manual-vol6-ptb
     name: USCIS Policy Manual Volume 6 Part B
     type: policy_manual

@@ -3,8 +3,10 @@ from __future__ import annotations
 import logging
 from mcp import StdioServerParameters
 from google.adk.agents import Agent
+from google.adk.tools import FunctionTool
 from google.adk.tools.mcp_tool import StdioConnectionParams, McpToolset
 from app.config import load_settings, redact_secret
+from app.retrieval import search_uscis_policy_manual
 
 logger = logging.getLogger("lucero.agent")
 
@@ -34,6 +36,8 @@ async def create_lucero_agent() -> Agent:
     logger.info("Connecting to MongoDB MCP server to fetch tools...")
     tools = await mcp_toolset.get_tools()
     logger.info("Fetched %d tools from MongoDB MCP server", len(tools))
+    tools.append(FunctionTool(search_uscis_policy_manual))
+    logger.info("Registered canonical retrieval tool: search_uscis_policy_manual")
 
     # Initialize the Google ADK Agent
     agent = Agent(
@@ -44,7 +48,7 @@ async def create_lucero_agent() -> Agent:
             "Your domain is I-601A provisional unlawful presence waivers and Ciudad Juarez consular processing. "
             "\n\n"
             "CRITICAL INSTRUCTIONS:\n"
-            "1. Ground every factual claim in retrieved source authority by invoking the MongoDB MCP tools (e.g. aggregate or find).\n"
+            "1. Ground every factual claim in retrieved source authority by invoking search_uscis_policy_manual or the MongoDB MCP tools (e.g. aggregate or find).\n"
             "2. Always cite your sources with relevant detail (e.g., Policy Manual section, CFR or INA section) and state the 'current as of' date if available.\n"
             "3. If the retrieved database documents do not contain the answer, say so explicitly and refuse to invent details from your parametric memory.\n"
             "4. Detect the language of the user's message and respond in that same language (English or Spanish).\n"

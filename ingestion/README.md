@@ -50,3 +50,28 @@ cd C:\Users\trash\Documents\Lucero\backend
 ```
 
 This embeds a query with Voyage, runs `$vectorSearch`, `$search`, and `$rankFusion`, and expects the I-601A hardship fixture to rank first.
+
+## USCIS Policy Manual Ingestion
+
+Dry-run the first real corpus parser:
+
+```powershell
+cd C:\Users\trash\Documents\Lucero
+backend\.venv\Scripts\python.exe ingestion\scripts\ingest_uscis_policy_manual.py --dry-run
+```
+
+Run live ingestion after the dry run succeeds:
+
+```powershell
+cd C:\Users\trash\Documents\Lucero
+backend\.venv\Scripts\python.exe ingestion\scripts\ingest_uscis_policy_manual.py
+```
+
+This ingests USCIS Policy Manual Volume 9 Part B and Part H HTML pages, chunks by headings, embeds chunks with Voyage, and upserts them into Atlas.
+
+Verify the real corpus retrieval path:
+
+```powershell
+cd C:\Users\trash\Documents\Lucero\backend
+.\.venv\Scripts\python.exe -m app.smoke_tests.real_policy_retrieval
+```
