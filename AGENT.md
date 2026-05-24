@@ -218,6 +218,10 @@ Refusal canaries:
 - 2026-05-20: MCP retrieval smoke test passed; `find` returned fixture docs and `aggregate` returned agency groups.
 - 2026-05-20: Added FastAPI `/api/chat` retrieval smoke test.
 - 2026-05-20: FastAPI `/api/chat` retrieval smoke test passed; captured MCP `find` and returned known fixture citation/text.
+- 2026-05-21: Added client-side Voyage fixture embedding script and installed `voyageai`.
+- 2026-05-21: Voyage fixture embedding smoke test passed; 3 fixture chunks in Atlas were updated with 1024-dimensional embeddings.
+- 2026-05-24: Added Atlas Search index setup script; created `vector_autoembed_index` and `fts_index` on `lucero.chunks`, both READY/queryable.
+- 2026-05-24: Added shared Voyage embedding helper and hybrid retrieval smoke test; `$vectorSearch`, `$search`, and `$rankFusion` all ranked the I-601A hardship fixture first.
 
 ## Open Questions
 
@@ -230,9 +234,7 @@ Refusal canaries:
 
 ## Current Next Actions
 
-1. Add client-side Voyage embedding generation to the ingestion path.
-2. Create Atlas Search and Vector Search indexes for the real chunks collection.
-3. Implement hybrid retrieval with `$rankFusion`, guarded by the existing feature flag.
-4. Start the first ingestion parser now that fixture retrieval is working.
-5. Replace synthetic fixtures with real ingested source chunks before any substantive legal demo.
-6. Build a canonical `search_uscis_policy_manual` FunctionTool around the eventual real chunks collection.
+1. Implement the canonical `search_uscis_policy_manual` backend retrieval helper/tool from the proven smoke pipeline.
+2. Start the first ingestion parser now that fixture retrieval, embeddings, and indexes are working.
+3. Replace synthetic fixtures with real ingested source chunks before any substantive legal demo.
+4. Wire the canonical retrieval helper into the ADK agent and source-panel response shape.

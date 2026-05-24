@@ -26,8 +26,10 @@ class Settings:
     use_rank_fusion: bool
     use_atlas_automated_embedding: bool
     vector_index: str
+    vector_dimensions: int
     fts_index: str
     voyage_api_key: str | None
+    voyage_embedding_model: str
     gemini_reasoning_model: str
     gemini_translation_model: str
     mcp_command: str
@@ -54,8 +56,10 @@ def load_settings() -> Settings:
         use_rank_fusion=_bool("LUCERO_USE_RANK_FUSION", default=True),
         use_atlas_automated_embedding=_bool("LUCERO_USE_ATLAS_AUTOMATED_EMBEDDING", default=False),
         vector_index=os.getenv("LUCERO_VECTOR_INDEX", "vector_autoembed_index"),
+        vector_dimensions=_int("LUCERO_VECTOR_DIMENSIONS", default=1024),
         fts_index=os.getenv("LUCERO_FTS_INDEX", "fts_index"),
         voyage_api_key=os.getenv("VOYAGE_API_KEY") or None,
+        voyage_embedding_model=os.getenv("VOYAGE_EMBEDDING_MODEL", "voyage-3-large"),
         gemini_reasoning_model=os.getenv("GEMINI_REASONING_MODEL", "gemini-3.5-flash"),
         gemini_translation_model=os.getenv("GEMINI_TRANSLATION_MODEL", "gemini-3.5-flash"),
         mcp_command=os.getenv("LUCERO_MCP_COMMAND", "npx"),
@@ -82,6 +86,16 @@ def _csv(name: str, default: list[str]) -> list[str]:
     if not value:
         return default
     return [part.strip() for part in value.split(",") if part.strip()]
+
+
+def _int(name: str, *, default: int) -> int:
+    value = os.getenv(name)
+    if value is None:
+        return default
+    try:
+        return int(value)
+    except ValueError as exc:
+        raise RuntimeError(f"Invalid integer environment variable {name}: {value}") from exc
 
 
 def redact_secret(value: str, *, visible_prefix: int = 12) -> str:
