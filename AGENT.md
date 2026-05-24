@@ -225,6 +225,7 @@ Refusal canaries:
 - 2026-05-24: Extracted hybrid retrieval into `app.retrieval`, added citation-ready `search_uscis_policy_manual`, and registered it as an ADK `FunctionTool` alongside MongoDB MCP tools.
 - 2026-05-24: Added USCIS Policy Manual HTML ingestion for Volume 9 Part B and current Part H; live run upserted 67 real USCIS chunks with 1024-dimensional Voyage embeddings.
 - 2026-05-24: Production `search_uscis_policy_manual` excludes `fixture-smoke-test` chunks by default; real retrieval smoke test returns USCIS Policy Manual B/H citations only.
+- 2026-05-24: FastAPI `/api/chat` now returns top-level `sources` extracted from `search_uscis_policy_manual`; MCP-only traces remain in `tool_calls` with empty sources.
 
 ## Open Questions
 
@@ -237,7 +238,7 @@ Refusal canaries:
 
 ## Current Next Actions
 
-1. Wire retrieved source chunks into the FastAPI response/source-panel shape.
-2. Add the next real corpus parser: USCIS Policy Manual Volume 9 Part A or Form I-601A instructions.
+1. Add the next real corpus parser: USCIS Policy Manual Volume 9 Part A or Form I-601A instructions.
+2. Build the frontend source panel against `/api/chat.sources`.
 3. Harden MCP lifecycle cleanup so local bootstrap checks do not hang on orphaned MCP subprocesses.
 4. Add eval prompts against the real USCIS Policy Manual chunks.

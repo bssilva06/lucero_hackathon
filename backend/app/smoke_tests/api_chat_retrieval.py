@@ -40,6 +40,7 @@ def main() -> int:
 
     response_text = str(payload.get("response", "")).strip()
     tool_calls = payload.get("tool_calls", [])
+    sources = payload.get("sources", [])
 
     if not response_text:
         print("FAIL Chat retrieval endpoint returned an empty response.")
@@ -49,6 +50,11 @@ def main() -> int:
     if not isinstance(tool_calls, list) or not tool_calls:
         print("FAIL Chat retrieval did not capture any MCP tool calls.")
         print(f"Response: {response_text}")
+        print(f"Payload: {json.dumps(payload, sort_keys=True)[:2_000]}")
+        return 1
+
+    if not isinstance(sources, list):
+        print("FAIL Chat retrieval returned malformed sources field.")
         print(f"Payload: {json.dumps(payload, sort_keys=True)[:2_000]}")
         return 1
 
@@ -74,6 +80,7 @@ def main() -> int:
         return 1
 
     exact_fixture_phrases = {
+        "Extreme hardship factors",
         "Extreme hardship factors for a provisional unlawful presence waiver",
         "family ties",
         "paper filing and online filing",
