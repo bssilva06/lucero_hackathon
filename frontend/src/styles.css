@@ -7,26 +7,26 @@
 }
 
 :root {
-  --bg:              #0B0C11;
-  --surface:         #111319;
-  --surface-raised:  #171A24;
-  --surface-hover:   #1D2030;
-  --border:          #22263A;
-  --border-subtle:   #191C2B;
+  --bg:              #0F1115;
+  --surface:         #151922;
+  --surface-raised:  #1E2430;
+  --surface-hover:   #252D3A;
+  --border:          #30384A;
+  --border-subtle:   #242B39;
 
-  --text-primary:    #E5E0D6;
-  --text-secondary:  #7C7F95;
-  --text-tertiary:   #484B60;
+  --text-primary:    #F2EDE4;
+  --text-secondary:  #B9C0CC;
+  --text-tertiary:   #7D8798;
 
-  --accent:          #CAA95F;
+  --accent:          #D8B86A;
   --accent-dim:      rgba(202, 169, 95, 0.10);
   --accent-border:   rgba(202, 169, 95, 0.22);
   --accent-hover:    rgba(202, 169, 95, 0.18);
-  --accent-text:     #D4B572;
+  --accent-text:     #F0D68A;
 
-  --green:           #6EA87E;
+  --green:           #78B892;
   --green-dim:       rgba(110, 168, 126, 0.10);
-  --red:             #B26868;
+  --red:             #D07A7A;
   --red-dim:         rgba(178, 104, 104, 0.10);
 
   --font-display:    'Fraunces', Georgia, 'Times New Roman', serif;
@@ -216,7 +216,7 @@ a:hover { text-decoration: underline; }
 }
 
 .chat-empty-icon {
-  color: var(--border);
+  color: var(--text-tertiary);
   stroke-width: 1.25;
 }
 
@@ -224,13 +224,13 @@ a:hover { text-decoration: underline; }
   font-family: var(--font-serif);
   font-size: 16px;
   font-style: italic;
-  color: var(--text-tertiary);
+  color: var(--text-secondary);
   font-variation-settings: "opsz" 16;
 }
 
 .chat-empty-hint {
   font-size: 12px;
-  color: var(--text-tertiary);
+  color: var(--text-secondary);
   max-width: 360px;
   line-height: 1.7;
 }
@@ -363,6 +363,11 @@ a:hover { text-decoration: underline; }
   line-height: 1.72;
   color: var(--text-primary);
   font-variation-settings: "opsz" 14;
+}
+
+.markdown strong {
+  color: #FFFFFF;
+  font-weight: 700;
 }
 
 .md-p {
@@ -717,7 +722,7 @@ a:hover { text-decoration: underline; }
 }
 
 .source-empty-icon {
-  color: var(--border);
+  color: var(--text-tertiary);
   stroke-width: 1.25;
 }
 
@@ -725,13 +730,13 @@ a:hover { text-decoration: underline; }
   font-family: var(--font-serif);
   font-size: 14px;
   font-style: italic;
-  color: var(--text-tertiary);
+  color: var(--text-secondary);
   font-variation-settings: "opsz" 14;
 }
 
 .source-empty-hint {
   font-size: 12px;
-  color: var(--text-tertiary);
+  color: var(--text-secondary);
   line-height: 1.65;
   max-width: 240px;
 }
