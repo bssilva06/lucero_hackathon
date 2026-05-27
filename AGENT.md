@@ -229,6 +229,7 @@ Refusal canaries:
 - 2026-05-24: FastAPI `/api/chat` now returns top-level `sources` extracted from `search_uscis_policy_manual`; MCP-only traces remain in `tool_calls` with empty sources.
 - 2026-05-26: Added curated USCIS form ingestion for I-601A, I-130, and G-1055; seeded Atlas `forms` records; registered `lookup_uscis_form`; fee/location evals pass.
 - 2026-05-26: Switched retrieval embeddings from third-party client-side embeddings to Google Vertex AI `gemini-embedding-001`; created `vector_google_embedding_index`; re-embedded fixture and real Policy Manual chunks with 3072-dimensional vectors; focused retrieval/API/eval checks pass.
+- 2026-05-26: MVP eval runner now restarts the backend per case by default to prevent one timed-out ADK turn from cascading into later eval failures; `--reuse-server` is available for faster local experiments.
 
 ## Open Questions
 

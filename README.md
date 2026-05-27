@@ -8,7 +8,7 @@ Lucero is designed as a citation-first AI research tool for licensed immigration
 
 - Backend: Python, Google Agent Development Kit, Gemini
 - Database: MongoDB Atlas
-- Retrieval: Google Vertex AI embeddings in MongoDB Atlas, `$rankFusion` when available, `$vectorSearch` fallback
+- Retrieval: Google Vertex AI `gemini-embedding-001` embeddings in MongoDB Atlas, `$rankFusion` when available, `$vectorSearch` fallback
 - MCP: official MongoDB MCP server
 - Frontend: React, Vite, Tailwind CSS
 - Deployment: Cloud Run, with secrets in Google Secret Manager
@@ -28,13 +28,62 @@ Lucero is designed as a citation-first AI research tool for licensed immigration
 
 ## Getting Started
 
-This repository is currently in Phase 0 bootstrap. Implementation begins with:
+Local development uses a backend virtual environment, MongoDB Atlas, Google Vertex AI/Gemini credentials, and the Vite frontend.
 
-1. Configure local environment variables from `.env.example`.
-2. Scaffold the ADK backend in `backend/`.
-3. Smoke test MongoDB Atlas, Atlas Automated Embedding, `$rankFusion`, and MongoDB MCP.
-4. Build the MVP ingestion pipeline for the minimum source corpus.
-5. Add the React dual-pane research UI.
+1. Copy `.env.example` to `.env` and set Google Cloud, MongoDB Atlas, and MCP connection values.
+2. Install backend dependencies:
+
+```powershell
+cd C:\Users\trash\Documents\Lucero\backend
+.\.venv\Scripts\python.exe -m pip install -e .
+```
+
+3. Confirm or create Atlas Search indexes:
+
+```powershell
+cd C:\Users\trash\Documents\Lucero
+backend\.venv\Scripts\python.exe ingestion\scripts\create_search_indexes.py
+```
+
+4. Run the backend:
+
+```powershell
+cd C:\Users\trash\Documents\Lucero\backend
+.\.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8080
+```
+
+5. Run the frontend:
+
+```powershell
+cd C:\Users\trash\Documents\Lucero\frontend
+npm install
+npm run dev
+```
+
+Open `http://127.0.0.1:5173`.
+
+## Current Corpus
+
+- USCIS Policy Manual Volume 9 Part B and Part H are ingested as Atlas `chunks` with 3072-dimensional Google Vertex AI embeddings.
+- USCIS Form I-601A, Form I-130, and G-1055 fee metadata are ingested as curated Atlas `forms` records.
+- Runtime retrieval uses `vector_google_embedding_index` plus `fts_index`.
+
+Useful checks:
+
+```powershell
+cd C:\Users\trash\Documents\Lucero\backend
+.\.venv\Scripts\python.exe -m app.smoke_tests.real_policy_retrieval
+.\.venv\Scripts\python.exe -m app.smoke_tests.forms_lookup
+.\.venv\Scripts\python.exe -m app.smoke_tests.api_chat_sources
+```
+
+Run focused MVP evals from the repository root:
+
+```powershell
+backend\.venv\Scripts\python.exe evals\run_mvp_evals.py --case hardship-evidence --timeout-seconds 90
+```
+
+The eval runner restarts the backend per case by default for reliable batch results.
 
 ## Safety Posture
 

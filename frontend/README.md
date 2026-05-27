@@ -12,6 +12,14 @@ npm run dev
 
 App runs at http://localhost:5173. Backend must be running on port 8080.
 
+Good test prompt:
+
+```text
+What factors does USCIS consider for extreme hardship in an I-601A provisional waiver? Cite the Policy Manual.
+```
+
+Expected behavior: an answer with citation chips, a selectable source panel on the right, and a tool trace containing `search_uscis_policy_manual`.
+
 ## Environment
 
 Copy `.env.example` to `.env.local` to override the API base:

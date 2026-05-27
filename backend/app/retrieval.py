@@ -141,6 +141,75 @@ def normalize_form_number(value: str) -> str | None:
     return f"I-{suffix}"
 
 
+def check_visa_bulletin(
+    category: str,
+    country: str = "Mexico",
+    month: str = "June",
+    year: int = 2026,
+) -> dict[str, Any]:
+    """Look up curated Visa Bulletin data and USCIS chart selection for a category/country/month."""
+    normalized_category = normalize_visa_category(category)
+    normalized_country = normalize_country(country)
+    normalized_month = month.strip().title()
+
+    settings = load_settings()
+    client = MongoClient(settings.mongo_uri, serverSelectionTimeoutMS=10_000)
+    try:
+        collection = client[settings.mongo_db][settings.mongo_visa_bulletins_collection]
+        document = collection.find_one(
+            {
+                "month": normalized_month,
+                "year": int(year),
+                "category": normalized_category,
+                "country": normalized_country,
+                "status": "active",
+            },
+            {"_id": 0},
+        )
+    finally:
+        client.close()
+
+    if not document:
+        return {
+            "found": False,
+            "query": {
+                "category": category,
+                "country": country,
+                "month": month,
+                "year": year,
+            },
+            "message": (
+                "No active curated Visa Bulletin record found for "
+                f"{normalized_category} {normalized_country} {normalized_month} {year}."
+            ),
+        }
+
+    return {
+        "found": True,
+        "query": {
+            "category": category,
+            "country": country,
+            "month": month,
+            "year": year,
+        },
+        "result": document,
+    }
+
+
+def normalize_visa_category(value: str) -> str:
+    compact = value.upper().replace("-", "").replace(" ", "")
+    if compact in {"F2A", "F2ASPOUSE", "F2ACHILD"}:
+        return "F2A"
+    return compact
+
+
+def normalize_country(value: str) -> str:
+    normalized = value.strip().title()
+    if normalized in {"Mx", "México"}:
+        return "Mexico"
+    return normalized
+
+
 def search_uscis_policy_manual_chunks(
     query: str,
     *,

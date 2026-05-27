@@ -17,10 +17,12 @@ Source fetching, parsing, chunking, and MongoDB Atlas loading for the Lucero MVP
 - Prefer structure-aware chunking by document headings and legal sections.
 - Preserve source URL, section citation, retrieval date, effective date, content hash, and document status.
 - Keep local fixtures small and non-secret so tests can run without Atlas access.
+- Use Google Vertex AI `gemini-embedding-001` for runtime-compliant 3072-dimensional embeddings.
+- Store embeddings in Atlas with `embedding_provider="google_vertex_ai"`.
 
 ## Fixture Embedding Smoke Test
 
-After configuring Google Cloud credentials and `GOOGLE_EMBEDDING_MODEL`, run:
+After configuring Google Cloud credentials and `GOOGLE_EMBEDDING_MODEL=gemini-embedding-001`, run:
 
 ```powershell
 cd C:\Users\trash\Documents\Lucero
@@ -39,6 +41,14 @@ backend\.venv\Scripts\python.exe ingestion\scripts\create_search_indexes.py
 ```
 
 This creates the configured Vector Search index on `embedding` and a text Search index on `text` plus citation metadata if they do not already exist.
+
+The current vector index defaults are:
+
+```env
+LUCERO_VECTOR_INDEX=vector_google_embedding_index
+LUCERO_VECTOR_DIMENSIONS=3072
+LUCERO_FTS_INDEX=fts_index
+```
 
 ## Hybrid Retrieval Smoke Test
 
@@ -69,9 +79,28 @@ backend\.venv\Scripts\python.exe ingestion\scripts\ingest_uscis_policy_manual.py
 
 This ingests USCIS Policy Manual Volume 9 Part B and Part H HTML pages, chunks by headings, embeds chunks with Google Vertex AI, and upserts them into Atlas.
 
+The script writes a resumable local embedding cache under `tmp/`, so interrupted runs can continue without re-embedding completed chunks.
+
 Verify the real corpus retrieval path:
 
 ```powershell
 cd C:\Users\trash\Documents\Lucero\backend
 .\.venv\Scripts\python.exe -m app.smoke_tests.real_policy_retrieval
 ```
+
+## USCIS Forms Ingestion
+
+Dry-run the curated forms parser:
+
+```powershell
+cd C:\Users\trash\Documents\Lucero
+backend\.venv\Scripts\python.exe ingestion\scripts\ingest_uscis_forms.py --dry-run
+```
+
+Run live ingestion:
+
+```powershell
+backend\.venv\Scripts\python.exe ingestion\scripts\ingest_uscis_forms.py
+```
+
+This upserts Form I-601A, Form I-130, and G-1055 fee metadata into Atlas `forms`.

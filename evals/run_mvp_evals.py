@@ -68,29 +68,21 @@ def main() -> int:
     print(f"MVP prompts: {len(questions)}", flush=True)
     print(f"Refusal canaries: {len(refusal_canaries)}", flush=True)
     print(f"Per-case timeout: {args.timeout_seconds}s", flush=True)
+    print(f"Server mode: {'single shared server' if args.reuse_server else 'restart per case'}", flush=True)
 
     with _working_directory(BACKEND_DIR):
-        with run_backend_server(host="127.0.0.1", port=8080) as base_url:
-            question_results = [
-                _run_case(
-                    base_url,
-                    case,
-                    category="mvp",
-                    index=index,
-                    timeout_seconds=args.timeout_seconds,
-                )
-                for index, case in enumerate(questions, start=1)
-            ]
-            refusal_results = [
-                _run_case(
-                    base_url,
-                    case,
-                    category="refusal",
-                    index=index,
-                    timeout_seconds=args.timeout_seconds,
-                )
-                for index, case in enumerate(refusal_canaries, start=1)
-            ]
+        question_results = _run_cases(
+            questions,
+            category="mvp",
+            timeout_seconds=args.timeout_seconds,
+            reuse_server=args.reuse_server,
+        )
+        refusal_results = _run_cases(
+            refusal_canaries,
+            category="refusal",
+            timeout_seconds=args.timeout_seconds,
+            reuse_server=args.reuse_server,
+        )
 
     _print_section("MVP prompt results", question_results)
     _print_section("Refusal canary results", refusal_results)
@@ -140,6 +132,11 @@ def _parse_args() -> argparse.Namespace:
         default=DEFAULT_CASE_TIMEOUT_SECONDS,
         help=f"Per-chat-request timeout. Default: {DEFAULT_CASE_TIMEOUT_SECONDS}.",
     )
+    parser.add_argument(
+        "--reuse-server",
+        action="store_true",
+        help="Run all cases against one backend server. Faster, but one hung case can affect later cases.",
+    )
     args = parser.parse_args()
     if args.limit is not None and args.limit < 1:
         parser.error("--limit must be at least 1")
@@ -167,6 +164,41 @@ def _select_cases(cases: list[Any], *, case_id: str | None, limit: int | None) -
     if limit is not None:
         selected = selected[:limit]
     return selected
+
+
+def _run_cases(
+    cases: list[Any],
+    *,
+    category: str,
+    timeout_seconds: int,
+    reuse_server: bool,
+) -> list[EvalResult]:
+    if reuse_server:
+        with run_backend_server(host="127.0.0.1", port=8080) as base_url:
+            return [
+                _run_case(
+                    base_url,
+                    case,
+                    category=category,
+                    index=index,
+                    timeout_seconds=timeout_seconds,
+                )
+                for index, case in enumerate(cases, start=1)
+            ]
+
+    results: list[EvalResult] = []
+    for index, case in enumerate(cases, start=1):
+        with run_backend_server(host="127.0.0.1", port=8080) as base_url:
+            results.append(
+                _run_case(
+                    base_url,
+                    case,
+                    category=category,
+                    index=index,
+                    timeout_seconds=timeout_seconds,
+                )
+            )
+    return results
 
 
 def _run_case(
