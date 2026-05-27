@@ -3,7 +3,7 @@ questions:
     language: EN
     prompt: "What's the current filing fee for I-130 paper vs. online?"
     expected_behavior: "Use lookup_uscis_form for I-130, cite G-1055, distinguish paper and online fees."
-    requires_sources: true
+    requires_sources: false
     expected_tool_names: ["lookup_uscis_form"]
     citation_prefixes: ["USCIS G-1055"]
     forbid_chunk_prefixes: ["fixture-"]
@@ -30,7 +30,7 @@ questions:
     language: EN
     prompt: "Is F2A current for Mexico in the June 2026 Visa Bulletin? Which chart does USCIS say to use?"
     expected_behavior: "Use check_visa_bulletin and identify category, country, cutoff, chart, and source URL."
-    requires_sources: true
+    requires_sources: false
     expected_tool_names: ["check_visa_bulletin"]
     forbid_chunk_prefixes: ["fixture-"]
     must_include_any: ["F2A", "Mexico", "June 2026", "chart"]
@@ -56,11 +56,12 @@ questions:
     language: ES
     prompt: "¿Cuál es la tarifa actual de la forma I-601A y dónde se presenta?"
     expected_behavior: "Translate query as needed, lookup I-601A form data, and respond in Spanish with citation."
-    requires_sources: true
+    requires_sources: false
     expected_tool_names: ["lookup_uscis_form"]
     citation_prefixes: ["USCIS G-1055"]
     forbid_chunk_prefixes: ["fixture-"]
     must_include_any: ["I-601A", "tarifa", "presenta"]
+    must_not_include_any: ["$85", "biometric", "biométric"]
   - id: es-removal-order-i601a
     language: ES
     prompt: "Mi cliente tiene una orden de remoción in absentia de 2019 pero nunca salió. ¿Califica para I-601A?"

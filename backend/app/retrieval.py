@@ -70,6 +70,78 @@ def search_uscis_policy_manual(
     return search_uscis_policy_manual_chunks(query, limit=limit)
 
 
+def lookup_uscis_form(form_number: str) -> dict[str, Any]:
+    """Look up curated USCIS form facts such as fees, filing location, and edition date."""
+    normalized_form_number = normalize_form_number(form_number)
+    if not normalized_form_number:
+        return {
+            "query": form_number,
+            "found": False,
+            "error": "form_number must identify a USCIS form, such as I-601A or I-130",
+        }
+
+    settings = load_settings()
+    client = MongoClient(settings.mongo_uri, serverSelectionTimeoutMS=10_000)
+    try:
+        collection = client[settings.mongo_db][settings.mongo_forms_collection]
+        document = collection.find_one(
+            {"form_number": normalized_form_number, "status": "active"},
+            {
+                "_id": 1,
+                "form_number": 1,
+                "title": 1,
+                "edition_date": 1,
+                "filing_methods": 1,
+                "filing_location_summary": 1,
+                "fee_entries": 1,
+                "source_urls": 1,
+                "section_citation": 1,
+                "retrieval_date": 1,
+                "content_hash": 1,
+            },
+        )
+    finally:
+        client.close()
+
+    if not document:
+        return {
+            "query": form_number,
+            "form_number": normalized_form_number,
+            "found": False,
+            "message": f"No active curated USCIS form record found for {normalized_form_number}.",
+        }
+
+    return {
+        "query": form_number,
+        "found": True,
+        "form": {
+            "form_id": str(document.get("_id", "")),
+            "form_number": document.get("form_number"),
+            "title": document.get("title"),
+            "edition_date": document.get("edition_date"),
+            "filing_methods": document.get("filing_methods", []),
+            "filing_location_summary": document.get("filing_location_summary"),
+            "fee_entries": document.get("fee_entries", []),
+            "source_urls": document.get("source_urls", {}),
+            "section_citation": document.get("section_citation"),
+            "retrieval_date": document.get("retrieval_date"),
+            "content_hash": document.get("content_hash"),
+        },
+    }
+
+
+def normalize_form_number(value: str) -> str | None:
+    compact = "".join(ch for ch in value.upper() if ch.isalnum())
+    if compact.startswith("FORM"):
+        compact = compact[4:]
+    if not compact.startswith("I"):
+        return None
+    suffix = compact[1:]
+    if not suffix:
+        return None
+    return f"I-{suffix}"
+
+
 def search_uscis_policy_manual_chunks(
     query: str,
     *,

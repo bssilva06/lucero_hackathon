@@ -23,12 +23,16 @@ sources:
     name: Form I-601A Instructions
     type: form_instructions
     agency: USCIS
-    status: planned
+    url: https://www.uscis.gov/i-601a
+    parser: uscis_forms_curated_v1
+    status: implemented
   - id: form-i-130-instructions
     name: Form I-130 Instructions
     type: form_instructions
     agency: USCIS
-    status: planned
+    url: https://www.uscis.gov/i-130
+    parser: uscis_forms_curated_v1
+    status: implemented
   - id: visa-bulletins-last-3
     name: Last 3 Visa Bulletins
     type: visa_bulletin
@@ -43,4 +47,6 @@ sources:
     name: USCIS G-1055 Fee Schedule
     type: fee_schedule
     agency: USCIS
-    status: planned
+    url: https://www.uscis.gov/sites/default/files/document/forms/g-1055.pdf
+    parser: uscis_forms_curated_v1
+    status: implemented

@@ -82,7 +82,7 @@ Build a citation-first bilingual legal research tool for licensed immigration pr
 - Implement `search_uscis_policy_manual` as the canonical retrieval tool.
 - Implement `$rankFusion` pipeline first, guarded by feature detection.
 - Implement pure `$vectorSearch` fallback.
-- Implement `lookup_uscis_form` backed by a curated forms collection.
+- [x] Implement `lookup_uscis_form` backed by a curated forms collection.
 - Implement `check_visa_bulletin` backed by parsed or fixture bulletin data.
 - Implement `format_legal_citation`.
 - Implement `translate_legal_es_en` as a Gemini Flash-family sub-agent.
@@ -226,6 +226,7 @@ Refusal canaries:
 - 2026-05-24: Added USCIS Policy Manual HTML ingestion for Volume 9 Part B and current Part H; live run upserted 67 real USCIS chunks with 1024-dimensional Voyage embeddings.
 - 2026-05-24: Production `search_uscis_policy_manual` excludes `fixture-smoke-test` chunks by default; real retrieval smoke test returns USCIS Policy Manual B/H citations only.
 - 2026-05-24: FastAPI `/api/chat` now returns top-level `sources` extracted from `search_uscis_policy_manual`; MCP-only traces remain in `tool_calls` with empty sources.
+- 2026-05-26: Added curated USCIS form ingestion for I-601A, I-130, and G-1055; seeded Atlas `forms` records; registered `lookup_uscis_form`; fee/location evals pass.
 
 ## Open Questions
 
@@ -238,7 +239,7 @@ Refusal canaries:
 
 ## Current Next Actions
 
-1. Add the next real corpus parser: USCIS Policy Manual Volume 9 Part A or Form I-601A instructions.
-2. Build the frontend source panel against `/api/chat.sources`.
+1. Add the next real corpus parser: recent Visa Bulletins or Ciudad Juarez consular post information.
+2. Implement `check_visa_bulletin` backed by parsed or curated bulletin data.
 3. Harden MCP lifecycle cleanup so local bootstrap checks do not hang on orphaned MCP subprocesses.
-4. Add eval prompts against the real USCIS Policy Manual chunks.
+4. Run the MVP eval harness in small batches and triage remaining corpus gaps.

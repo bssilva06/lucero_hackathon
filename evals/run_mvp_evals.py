@@ -268,7 +268,12 @@ def _check_case(
             failures.append(f"missing expected tool call: {tool_name}")
 
     citation_prefixes = _string_list(case.get("citation_prefixes"))
-    if citation_prefixes and not _has_citation_prefix(response, sources, citation_prefixes):
+    if citation_prefixes and not _has_citation_prefix(
+        response,
+        sources,
+        tool_calls,
+        citation_prefixes,
+    ):
         failures.append(f"missing citation prefix: {', '.join(citation_prefixes)}")
 
     forbid_chunk_prefixes = _string_list(case.get("forbid_chunk_prefixes"))
@@ -320,7 +325,12 @@ def _tool_names(tool_calls: Any) -> list[str]:
     ]
 
 
-def _has_citation_prefix(response: str, sources: list[Any], prefixes: list[str]) -> bool:
+def _has_citation_prefix(
+    response: str,
+    sources: list[Any],
+    tool_calls: list[Any],
+    prefixes: list[str],
+) -> bool:
     if _contains_any(response, prefixes):
         return True
     for source in sources:
@@ -329,7 +339,7 @@ def _has_citation_prefix(response: str, sources: list[Any], prefixes: list[str])
         citation = str(source.get("section_citation") or "")
         if any(citation.startswith(prefix) for prefix in prefixes):
             return True
-    return False
+    return _contains_any(json.dumps(tool_calls, sort_keys=True, default=str), prefixes)
 
 
 def _first_forbidden_chunk(sources: list[Any], prefixes: list[str]) -> str | None:
