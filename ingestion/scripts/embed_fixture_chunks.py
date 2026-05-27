@@ -21,35 +21,32 @@ from app.smoke_tests.fixtures import FIXTURE_SOURCE_CHUNKS  # noqa: E402
 def main() -> int:
     settings = load_settings()
 
-    print("Lucero Voyage fixture embedding seed")
+    print("Lucero Google fixture embedding seed")
     print("------------------------------------")
     print(f"Database: {settings.mongo_db}")
     print(f"Collection: {settings.mongo_chunks_collection}")
-    print(f"Embedding model: {settings.voyage_embedding_model}")
-
-    if not settings.voyage_api_key:
-        print("FAIL Missing VOYAGE_API_KEY.")
-        print("     Create a Voyage model API key and add it to the repository .env file.")
-        return 1
+    print(f"Embedding model: {settings.google_embedding_model}")
 
     try:
         embeddings = embed_texts(
             [str(chunk["text"]) for chunk in FIXTURE_SOURCE_CHUNKS],
-            api_key=settings.voyage_api_key,
-            model=settings.voyage_embedding_model,
+            project_id=settings.google_cloud_project,
+            location=settings.google_cloud_location,
+            model=settings.google_embedding_model,
             input_type="document",
+            output_dimensionality=settings.vector_dimensions,
         )
     except ImportError:
-        print("FAIL Missing voyageai package.")
+        print("FAIL Missing Google Vertex AI package.")
         print("     Install backend dependencies again: python -m pip install -e .")
         return 1
     except Exception as exc:
-        print("FAIL Voyage embedding request failed.")
+        print("FAIL Google embedding request failed.")
         print(f"Reason: {exc}")
         return 1
 
     if len(embeddings) != len(FIXTURE_SOURCE_CHUNKS):
-        print("FAIL Voyage returned an unexpected number of embeddings.")
+        print("FAIL Google Vertex AI returned an unexpected number of embeddings.")
         print(f"Expected: {len(FIXTURE_SOURCE_CHUNKS)}")
         print(f"Received: {len(embeddings)}")
         return 1
@@ -60,8 +57,8 @@ def main() -> int:
         document = {
             **chunk,
             "embedding": embedding,
-            "embedding_model": settings.voyage_embedding_model,
-            "embedding_provider": "voyageai",
+            "embedding_model": settings.google_embedding_model,
+            "embedding_provider": "google_vertex_ai",
             "embedded_at": embedded_at,
         }
         operations.append(UpdateOne({"_id": document["_id"]}, {"$set": document}, upsert=True))

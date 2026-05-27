@@ -20,14 +20,14 @@ Source fetching, parsing, chunking, and MongoDB Atlas loading for the Lucero MVP
 
 ## Fixture Embedding Smoke Test
 
-After adding `VOYAGE_API_KEY` to the repository `.env`, run:
+After configuring Google Cloud credentials and `GOOGLE_EMBEDDING_MODEL`, run:
 
 ```powershell
 cd C:\Users\trash\Documents\Lucero
 backend\.venv\Scripts\python.exe ingestion\scripts\embed_fixture_chunks.py
 ```
 
-This generates Voyage embeddings for the synthetic fixture chunks and upserts them into the configured Atlas `chunks` collection with `embedding`, `embedding_model`, `embedding_provider`, and `embedded_at` fields.
+This generates Google Vertex AI embeddings for the synthetic fixture chunks and upserts them into the configured Atlas `chunks` collection with `embedding`, `embedding_model`, `embedding_provider`, and `embedded_at` fields.
 
 ## Atlas Search Index Setup
 
@@ -49,7 +49,7 @@ cd C:\Users\trash\Documents\Lucero\backend
 .\.venv\Scripts\python.exe -m app.smoke_tests.hybrid_retrieval
 ```
 
-This embeds a query with Voyage, runs `$vectorSearch`, `$search`, and `$rankFusion`, and expects the I-601A hardship fixture to rank first.
+This embeds a query with Google Vertex AI, runs `$vectorSearch`, `$search`, and `$rankFusion`, and expects the I-601A hardship fixture to rank first.
 
 ## USCIS Policy Manual Ingestion
 
@@ -67,7 +67,7 @@ cd C:\Users\trash\Documents\Lucero
 backend\.venv\Scripts\python.exe ingestion\scripts\ingest_uscis_policy_manual.py
 ```
 
-This ingests USCIS Policy Manual Volume 9 Part B and Part H HTML pages, chunks by headings, embeds chunks with Voyage, and upserts them into Atlas.
+This ingests USCIS Policy Manual Volume 9 Part B and Part H HTML pages, chunks by headings, embeds chunks with Google Vertex AI, and upserts them into Atlas.
 
 Verify the real corpus retrieval path:
 

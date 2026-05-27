@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import json
 import re
 import sys
 from dataclasses import dataclass
@@ -67,6 +68,11 @@ def main() -> int:
     parser.add_argument("--dry-run", action="store_true", help="Parse and summarize without embeddings or Atlas writes.")
     parser.add_argument("--limit-pages", type=int, default=0, help="Limit fetched pages for parser debugging.")
     parser.add_argument("--run-id", default="", help="Override ingestion run id.")
+    parser.add_argument(
+        "--embedding-cache",
+        default="",
+        help="Path to a local JSON embedding cache. Defaults to tmp/uscis_policy_manual_embeddings_<model>_<dimensions>.json.",
+    )
     args = parser.parse_args()
 
     settings = load_settings()
@@ -106,26 +112,16 @@ def main() -> int:
         print("PASS Dry run completed without Atlas writes.")
         return 0
 
-    if not settings.voyage_api_key:
-        print("FAIL Missing VOYAGE_API_KEY.")
-        return 1
-
+    cache_path = (
+        Path(args.embedding_cache)
+        if args.embedding_cache
+        else default_embedding_cache_path(settings.google_embedding_model, settings.vector_dimensions)
+    )
     try:
-        embeddings = embed_texts(
-            [str(chunk["text"]) for chunk in chunks],
-            api_key=settings.voyage_api_key,
-            model=settings.voyage_embedding_model,
-            input_type="document",
-        )
+        embeddings = embed_chunks_with_cache(chunks, cache_path=cache_path, settings=settings)
     except Exception as exc:
-        print("FAIL Voyage embedding request failed.")
+        print("FAIL Google embedding request failed.")
         print(f"Reason: {exc}")
-        return 1
-
-    if len(embeddings) != len(chunks):
-        print("FAIL Voyage returned an unexpected number of embeddings.")
-        print(f"Expected: {len(chunks)}")
-        print(f"Received: {len(embeddings)}")
         return 1
 
     embedded_at = datetime.now(UTC).isoformat()
@@ -134,8 +130,8 @@ def main() -> int:
         document = {
             **chunk,
             "embedding": embedding,
-            "embedding_model": settings.voyage_embedding_model,
-            "embedding_provider": "voyageai",
+            "embedding_model": settings.google_embedding_model,
+            "embedding_provider": "google_vertex_ai",
             "embedded_at": embedded_at,
         }
         operations.append(UpdateOne({"_id": document["_id"]}, {"$set": document}, upsert=True))
@@ -161,6 +157,116 @@ def main() -> int:
     print(f"Modified: {result.modified_count}")
     print(f"Upserted: {len(result.upserted_ids)}")
     return 0
+
+
+def embed_chunks_with_cache(
+    chunks: list[dict[str, object]],
+    *,
+    cache_path: Path,
+    settings: object,
+) -> list[list[float]]:
+    cache = load_embedding_cache(cache_path)
+    embeddings: list[list[float]] = []
+    cache_hits = 0
+
+    print()
+    print(f"Embedding cache: {cache_path}")
+    print(f"Embedding model: {settings.google_embedding_model}")
+    print(f"Embedding dimensions: {settings.vector_dimensions}")
+
+    for index, chunk in enumerate(chunks, start=1):
+        chunk_id = str(chunk["_id"])
+        content_hash = str(chunk["content_hash"])
+        cached_embedding = cached_chunk_embedding(
+            cache,
+            chunk_id=chunk_id,
+            content_hash=content_hash,
+            model=settings.google_embedding_model,
+            dimensions=settings.vector_dimensions,
+        )
+        if cached_embedding is not None:
+            cache_hits += 1
+            embeddings.append(cached_embedding)
+            print(f"EMBED {index}/{len(chunks)} cache hit: {chunk_id}", flush=True)
+            continue
+
+        print(f"EMBED {index}/{len(chunks)} request: {chunk_id}", flush=True)
+        embedding = embed_texts(
+            [str(chunk["text"])],
+            project_id=settings.google_cloud_project,
+            location=settings.google_cloud_location,
+            model=settings.google_embedding_model,
+            input_type="document",
+            output_dimensionality=settings.vector_dimensions,
+            request_delay_seconds=2,
+        )[0]
+        if len(embedding) != settings.vector_dimensions:
+            raise RuntimeError(
+                f"Unexpected embedding dimensions for {chunk_id}: "
+                f"{len(embedding)} != {settings.vector_dimensions}"
+            )
+        embeddings.append(embedding)
+        cache[chunk_id] = {
+            "content_hash": content_hash,
+            "embedding_model": settings.google_embedding_model,
+            "embedding_provider": "google_vertex_ai",
+            "dimensions": settings.vector_dimensions,
+            "embedding": embedding,
+        }
+        save_embedding_cache(cache_path, cache)
+
+    print(f"Embedding cache hits: {cache_hits}/{len(chunks)}")
+    return embeddings
+
+
+def default_embedding_cache_path(model: str, dimensions: int) -> Path:
+    safe_model = re.sub(r"[^a-zA-Z0-9]+", "_", model).strip("_").lower()
+    return ROOT_DIR / "tmp" / f"uscis_policy_manual_embeddings_{safe_model}_{dimensions}.json"
+
+
+def load_embedding_cache(cache_path: Path) -> dict[str, dict[str, object]]:
+    if not cache_path.exists():
+        return {}
+    with cache_path.open("r", encoding="utf-8") as handle:
+        data = json.load(handle)
+    if not isinstance(data, dict):
+        raise RuntimeError(f"Embedding cache is not a JSON object: {cache_path}")
+    return {
+        str(key): value
+        for key, value in data.items()
+        if isinstance(value, dict)
+    }
+
+
+def save_embedding_cache(cache_path: Path, cache: dict[str, dict[str, object]]) -> None:
+    cache_path.parent.mkdir(parents=True, exist_ok=True)
+    temp_path = cache_path.with_suffix(f"{cache_path.suffix}.tmp")
+    with temp_path.open("w", encoding="utf-8") as handle:
+        json.dump(cache, handle)
+    temp_path.replace(cache_path)
+
+
+def cached_chunk_embedding(
+    cache: dict[str, dict[str, object]],
+    *,
+    chunk_id: str,
+    content_hash: str,
+    model: str,
+    dimensions: int,
+) -> list[float] | None:
+    entry = cache.get(chunk_id)
+    if not entry:
+        return None
+    if entry.get("content_hash") != content_hash:
+        return None
+    if entry.get("embedding_model") != model:
+        return None
+    if entry.get("dimensions") != dimensions:
+        return None
+    embedding = entry.get("embedding")
+    if not isinstance(embedding, list) or len(embedding) != dimensions:
+        return None
+    return [float(value) for value in embedding]
 
 
 def discover_page_urls(*, limit_pages: int = 0) -> list[str]:

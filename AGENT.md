@@ -12,7 +12,7 @@ Lucero is a bilingual research co-pilot for immigration legal teams focused on I
 - FastAPI `/api/chat` smoke test exists and passes locally with `gemini-2.5-pro`.
 - Atlas fixture chunks exist in the `chunks` collection and MongoDB MCP `find` / `aggregate` retrieval has been verified locally.
 - Agent-level `/api/chat` retrieval smoke test exists and passes, requiring an MCP tool call plus fixture citation/text grounding.
-- MVP target is a hackathon submission using Google ADK, Gemini 3.1, MongoDB Atlas, MongoDB MCP, Atlas Automated Embedding with Voyage, and a React/Vite/Tailwind frontend.
+- MVP target is a hackathon submission using Google ADK, Gemini, Google Vertex AI embeddings, MongoDB Atlas, MongoDB MCP, and a React/Vite/Tailwind frontend.
 - Current date at initialization: 2026-05-16.
 
 ## Product North Star
@@ -24,7 +24,7 @@ Build a citation-first bilingual legal research tool for licensed immigration pr
 - Gemini LLM via Google ADK.
 - MongoDB Atlas as the vector/data store.
 - Official MongoDB MCP server used genuinely, with visible `aggregate` and `collection-schema` traces in the demo.
-- Atlas Automated Embedding with managed Voyage if available; client-side Voyage fallback only if necessary.
+- Google Vertex AI embeddings stored in MongoDB Atlas Vector Search for hackathon runtime compliance.
 - `$rankFusion` hybrid search if smoke test passes; pure `$vectorSearch` fallback if it does not.
 - Public deployment URL for judging.
 - Apache-2.0 license in the public repo.
@@ -38,7 +38,7 @@ Build a citation-first bilingual legal research tool for licensed immigration pr
 - [x] Create a monorepo structure for backend, frontend, ingestion scripts, infrastructure notes, and fixtures.
 - [x] Add baseline files: `README.md`, `LICENSE`, `.gitignore`, `.env.example`, and developer setup notes.
 - [x] Choose concrete package managers and Python runtime versions.
-- [x] Document all required external accounts/secrets: Google Cloud, Gemini/Vertex configuration, MongoDB Atlas, Voyage fallback key, deployment secrets.
+- [x] Document all required external accounts/secrets: Google Cloud, Gemini/Vertex configuration, MongoDB Atlas, and deployment secrets.
 
 ### Phase 1: Cloud and Database Smoke Tests
 
@@ -49,8 +49,8 @@ Build a citation-first bilingual legal research tool for licensed immigration pr
 - [x] Smoke test local MongoDB MCP server launch.
 - [x] Smoke test MongoDB version and `$rankFusion` support with a small throwaway collection.
 - Record the result in this file and set the retrieval path:
-  - Primary: client-side Voyage embeddings + `$rankFusion`.
-  - Fallback A: client-side Voyage embeddings + `$vectorSearch`, while preserving MCP traces.
+  - Primary: Google Vertex AI embeddings + `$rankFusion`.
+  - Fallback A: Google Vertex AI embeddings + `$vectorSearch`, while preserving MCP traces.
   - Fallback B: keyword/full-text retrieval through MongoDB MCP for demo continuity.
 
 ### Phase 2: Backend Skeleton
@@ -183,7 +183,8 @@ Refusal canaries:
 - 2026-05-16: Chose Python 3.11+ for backend, `uv` preferred with `pip` fallback, Node.js 20+ and `npm` for frontend bootstrap.
 - 2026-05-19: Local Python runtime is 3.13.2; Node.js is 22.14.0; `npx` is 11.6.2.
 - 2026-05-19: Atlas connection works. Cluster reports MongoDB server version 8.0.23.
-- 2026-05-21: MongoDB docs currently list Automated Embedding `autoEmbed` as unavailable for Atlas clusters, so Lucero will use client-side Voyage embeddings for Atlas.
+- 2026-05-21: MongoDB docs currently list Automated Embedding `autoEmbed` as unavailable for Atlas clusters.
+- 2026-05-26: For hackathon compliance, Lucero uses Google Vertex AI embeddings in Atlas Vector Search instead of third-party client-side embedding services.
 - 2026-05-21: `$rankFusion` smoke test passed against the configured Atlas cluster using a throwaway collection and two sorted selection pipelines.
 - 2026-05-20: MCP stdio startup must avoid first-run `npx` download/warning output; default launch path is `npx --no-install mongodb-mcp-server --readOnly`.
 - 2026-05-20: ADK runners use `auto_create_session=True` for local CLI and FastAPI in-memory sessions.
@@ -218,15 +219,16 @@ Refusal canaries:
 - 2026-05-20: MCP retrieval smoke test passed; `find` returned fixture docs and `aggregate` returned agency groups.
 - 2026-05-20: Added FastAPI `/api/chat` retrieval smoke test.
 - 2026-05-20: FastAPI `/api/chat` retrieval smoke test passed; captured MCP `find` and returned known fixture citation/text.
-- 2026-05-21: Added client-side Voyage fixture embedding script and installed `voyageai`.
-- 2026-05-21: Voyage fixture embedding smoke test passed; 3 fixture chunks in Atlas were updated with 1024-dimensional embeddings.
-- 2026-05-24: Added Atlas Search index setup script; created `vector_autoembed_index` and `fts_index` on `lucero.chunks`, both READY/queryable.
-- 2026-05-24: Added shared Voyage embedding helper and hybrid retrieval smoke test; `$vectorSearch`, `$search`, and `$rankFusion` all ranked the I-601A hardship fixture first.
+- 2026-05-21: Added fixture embedding script.
+- 2026-05-21: Fixture embedding smoke test passed; 3 fixture chunks in Atlas were updated with embeddings.
+- 2026-05-24: Added Atlas Search index setup script; created vector and text indexes on `lucero.chunks`, both READY/queryable.
+- 2026-05-24: Added shared embedding helper and hybrid retrieval smoke test; `$vectorSearch`, `$search`, and `$rankFusion` all ranked the I-601A hardship fixture first.
 - 2026-05-24: Extracted hybrid retrieval into `app.retrieval`, added citation-ready `search_uscis_policy_manual`, and registered it as an ADK `FunctionTool` alongside MongoDB MCP tools.
-- 2026-05-24: Added USCIS Policy Manual HTML ingestion for Volume 9 Part B and current Part H; live run upserted 67 real USCIS chunks with 1024-dimensional Voyage embeddings.
+- 2026-05-24: Added USCIS Policy Manual HTML ingestion for Volume 9 Part B and current Part H; live run upserted 67 real USCIS chunks with embeddings.
 - 2026-05-24: Production `search_uscis_policy_manual` excludes `fixture-smoke-test` chunks by default; real retrieval smoke test returns USCIS Policy Manual B/H citations only.
 - 2026-05-24: FastAPI `/api/chat` now returns top-level `sources` extracted from `search_uscis_policy_manual`; MCP-only traces remain in `tool_calls` with empty sources.
 - 2026-05-26: Added curated USCIS form ingestion for I-601A, I-130, and G-1055; seeded Atlas `forms` records; registered `lookup_uscis_form`; fee/location evals pass.
+- 2026-05-26: Switched retrieval embeddings from third-party client-side embeddings to Google Vertex AI `gemini-embedding-001`; created `vector_google_embedding_index`; re-embedded fixture and real Policy Manual chunks with 3072-dimensional vectors; focused retrieval/API/eval checks pass.
 
 ## Open Questions
 

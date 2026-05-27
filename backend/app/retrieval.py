@@ -32,20 +32,19 @@ def search_source_chunks(
     limit: int = DEFAULT_LIMIT,
     settings: Settings | None = None,
 ) -> list[dict[str, Any]]:
-    """Search source chunks with Voyage query embeddings and Atlas hybrid retrieval."""
+    """Search source chunks with Google query embeddings and Atlas hybrid retrieval."""
     if not query.strip():
         raise ValueError("query must not be empty")
 
     settings = settings or load_settings()
-    if not settings.voyage_api_key:
-        raise RuntimeError("Missing VOYAGE_API_KEY")
-
     filters = filters or RetrievalFilters()
     query_vector = embed_texts(
         [query],
-        api_key=settings.voyage_api_key,
-        model=settings.voyage_embedding_model,
+        project_id=settings.google_cloud_project,
+        location=settings.google_cloud_location,
+        model=settings.google_embedding_model,
         input_type="query",
+        output_dimensionality=settings.vector_dimensions,
     )[0]
 
     client = MongoClient(settings.mongo_uri, serverSelectionTimeoutMS=10_000)

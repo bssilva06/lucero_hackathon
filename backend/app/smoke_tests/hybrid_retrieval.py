@@ -30,16 +30,14 @@ def main() -> int:
     print(f"Vector index: {settings.vector_index}")
     print(f"Text index: {settings.fts_index}")
 
-    if not settings.voyage_api_key:
-        print("FAIL Missing VOYAGE_API_KEY.")
-        return 1
-
     try:
         query_vector = embed_texts(
             [QUERY],
-            api_key=settings.voyage_api_key,
-            model=settings.voyage_embedding_model,
+            project_id=settings.google_cloud_project,
+            location=settings.google_cloud_location,
+            model=settings.google_embedding_model,
             input_type="query",
+            output_dimensionality=settings.vector_dimensions,
         )[0]
     except Exception as exc:
         print("FAIL Could not embed retrieval query.")

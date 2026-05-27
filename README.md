@@ -8,7 +8,7 @@ Lucero is designed as a citation-first AI research tool for licensed immigration
 
 - Backend: Python, Google Agent Development Kit, Gemini
 - Database: MongoDB Atlas
-- Retrieval: Atlas Automated Embedding with managed Voyage, `$rankFusion` when available, `$vectorSearch` fallback
+- Retrieval: Google Vertex AI embeddings in MongoDB Atlas, `$rankFusion` when available, `$vectorSearch` fallback
 - MCP: official MongoDB MCP server
 - Frontend: React, Vite, Tailwind CSS
 - Deployment: Cloud Run, with secrets in Google Secret Manager

@@ -26,7 +26,7 @@ def main() -> int:
     print(f"MongoDB database: {settings.mongo_db}")
     print(f"Rank fusion requested: {settings.use_rank_fusion}")
     print(f"Atlas automated embedding requested: {settings.use_atlas_automated_embedding}")
-    print(f"Voyage fallback key present: {bool(settings.voyage_api_key)}")
+    print(f"Google embedding model: {settings.google_embedding_model}")
 
     return 0 if all(checks.values()) else 1
 

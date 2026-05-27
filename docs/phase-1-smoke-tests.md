@@ -140,4 +140,4 @@ Those require the first ingestion/index fixture and the ADK backend skeleton.
 
 ## Atlas Automated Embedding Note
 
-MongoDB's current Automated Embedding documentation says `autoEmbed` is a Preview feature for MongoDB Community Edition 8.2+ Search/Vector Search deployments, and lists Atlas clusters as unsupported. For this Atlas-backed MVP, use client-side Voyage embeddings plus Atlas Vector Search unless MongoDB enables Atlas support for the project.
+MongoDB's current Automated Embedding documentation says `autoEmbed` is a Preview feature for MongoDB Community Edition 8.2+ Search/Vector Search deployments, and lists Atlas clusters as unsupported. For this Atlas-backed MVP, use Google Vertex AI embeddings plus Atlas Vector Search so runtime AI stays within Google Cloud and MongoDB partner services.

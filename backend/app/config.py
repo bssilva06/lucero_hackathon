@@ -28,8 +28,7 @@ class Settings:
     vector_index: str
     vector_dimensions: int
     fts_index: str
-    voyage_api_key: str | None
-    voyage_embedding_model: str
+    google_embedding_model: str
     gemini_reasoning_model: str
     gemini_translation_model: str
     mcp_command: str
@@ -55,11 +54,10 @@ def load_settings() -> Settings:
         mongo_query_logs_collection=os.getenv("MONGO_QUERY_LOGS_COLLECTION", "query_logs"),
         use_rank_fusion=_bool("LUCERO_USE_RANK_FUSION", default=True),
         use_atlas_automated_embedding=_bool("LUCERO_USE_ATLAS_AUTOMATED_EMBEDDING", default=False),
-        vector_index=os.getenv("LUCERO_VECTOR_INDEX", "vector_autoembed_index"),
-        vector_dimensions=_int("LUCERO_VECTOR_DIMENSIONS", default=1024),
+        vector_index=os.getenv("LUCERO_VECTOR_INDEX", "vector_google_embedding_index"),
+        vector_dimensions=_int("LUCERO_VECTOR_DIMENSIONS", default=3072),
         fts_index=os.getenv("LUCERO_FTS_INDEX", "fts_index"),
-        voyage_api_key=os.getenv("VOYAGE_API_KEY") or None,
-        voyage_embedding_model=os.getenv("VOYAGE_EMBEDDING_MODEL", "voyage-3-large"),
+        google_embedding_model=os.getenv("GOOGLE_EMBEDDING_MODEL", "gemini-embedding-001"),
         gemini_reasoning_model=os.getenv("GEMINI_REASONING_MODEL", "gemini-3.5-flash"),
         gemini_translation_model=os.getenv("GEMINI_TRANSLATION_MODEL", "gemini-3.5-flash"),
         mcp_command=os.getenv("LUCERO_MCP_COMMAND", "npx"),
