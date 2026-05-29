@@ -308,6 +308,15 @@ def _check_case(
     ):
         failures.append(f"missing citation prefix: {', '.join(citation_prefixes)}")
 
+    required_citation_prefixes = _string_list(case.get("required_citation_prefixes"))
+    missing_citation_prefixes = [
+        prefix
+        for prefix in required_citation_prefixes
+        if not _has_citation_prefix(response, sources, tool_calls, [prefix])
+    ]
+    if missing_citation_prefixes:
+        failures.append(f"missing required citation prefix: {', '.join(missing_citation_prefixes)}")
+
     forbid_chunk_prefixes = _string_list(case.get("forbid_chunk_prefixes"))
     forbidden_chunk = _first_forbidden_chunk(sources, forbid_chunk_prefixes)
     if forbidden_chunk:
@@ -316,6 +325,13 @@ def _check_case(
     must_include_any = _string_list(case.get("must_include_any"))
     if must_include_any and not _contains_any(response, must_include_any):
         failures.append(f"response missing any required phrase: {', '.join(must_include_any)}")
+
+    must_include_all = _string_list(case.get("must_include_all"))
+    missing_phrases = [
+        phrase for phrase in must_include_all if not _contains_any(response, [phrase])
+    ]
+    if missing_phrases:
+        failures.append(f"response missing required phrase: {', '.join(missing_phrases)}")
 
     must_not_include_any = _string_list(case.get("must_not_include_any"))
     forbidden_phrase = _first_contained(response, must_not_include_any)

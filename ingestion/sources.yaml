@@ -42,9 +42,11 @@ sources:
     status: partial
   - id: cdj-consular-post-info
     name: Ciudad Juarez Consular Post Information
-    type: fam
+    type: consular_process
     agency: DOS
-    status: planned
+    url: https://travel.state.gov/content/travel/en/us-visas/Supplements/Supplements_by_Post/CDJ-Ciudad-Juarez.html
+    parser: consular_process_curated_v1
+    status: implemented
   - id: g-1055-fee-schedule
     name: USCIS G-1055 Fee Schedule
     type: fee_schedule

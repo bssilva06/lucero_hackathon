@@ -9,6 +9,7 @@ Python backend for the Lucero ADK agent, HTTP API, tool implementations, MongoDB
   - `search_uscis_policy_manual`
   - `lookup_uscis_form`
   - `check_visa_bulletin`
+  - `lookup_consular_process`
   - `format_legal_citation`
 - Agent tool:
   - `translate_legal_es_en`
@@ -35,6 +36,7 @@ LUCERO_FTS_INDEX=fts_index
 ```
 
 MongoDB Atlas settings must include `MONGO_URI` and `MDB_MCP_CONNECTION_STRING`.
+Curated CDJ/NVC records default to `MONGO_CONSULAR_PROCESSES_COLLECTION=consular_processes`.
 
 ## Running
 
@@ -58,7 +60,9 @@ Run from `backend`:
 .\.venv\Scripts\python.exe -m app.smoke_tests.hybrid_retrieval
 .\.venv\Scripts\python.exe -m app.smoke_tests.real_policy_retrieval
 .\.venv\Scripts\python.exe -m app.smoke_tests.forms_lookup
+.\.venv\Scripts\python.exe -m app.smoke_tests.consular_process
 .\.venv\Scripts\python.exe -m app.smoke_tests.api_chat_sources
+.\.venv\Scripts\python.exe -m app.smoke_tests.api_chat_cdj_timeline
 ```
 
 Do not run server-starting smoke tests in parallel; they bind to port `8080`.

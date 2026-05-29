@@ -247,6 +247,83 @@ def normalize_country(value: str) -> str:
     return normalized
 
 
+def lookup_consular_process(topic: str, post: str = "CDJ") -> dict[str, Any]:
+    """Look up curated DOS/NVC consular-processing facts for a consular post."""
+    normalized_post = normalize_consular_post(post)
+    if not normalized_post:
+        return {
+            "query": {"topic": topic, "post": post},
+            "found": False,
+            "error": "post must identify a supported consular post, such as CDJ or Ciudad Juarez",
+        }
+
+    settings = load_settings()
+    client = MongoClient(settings.mongo_uri, serverSelectionTimeoutMS=10_000)
+    try:
+        collection = client[settings.mongo_db][settings.mongo_consular_processes_collection]
+        documents = list(
+            collection.find(
+                {"post": normalized_post, "status": "active"},
+                {
+                    "_id": 1,
+                    "post": 1,
+                    "title": 1,
+                    "section_citation": 1,
+                    "summary": 1,
+                    "timeline_steps": 1,
+                    "source_urls": 1,
+                    "retrieval_date": 1,
+                    "content_hash": 1,
+                    "agency": 1,
+                    "doc_type": 1,
+                    "jurisdiction": 1,
+                },
+            ).sort("sort_order", 1)
+        )
+    finally:
+        client.close()
+
+    if not documents:
+        return {
+            "query": {"topic": topic, "post": post},
+            "post": normalized_post,
+            "found": False,
+            "message": f"No active curated consular-process records found for {normalized_post}.",
+        }
+
+    return {
+        "query": {"topic": topic, "post": post},
+        "post": normalized_post,
+        "found": True,
+        "records": [
+            {
+                "record_id": str(document.get("_id", "")),
+                "post": document.get("post"),
+                "title": document.get("title"),
+                "section_citation": document.get("section_citation"),
+                "summary": document.get("summary"),
+                "timeline_steps": document.get("timeline_steps", []),
+                "source_urls": document.get("source_urls", {}),
+                "retrieval_date": document.get("retrieval_date"),
+                "content_hash": document.get("content_hash"),
+                "agency": document.get("agency", "DOS"),
+                "doc_type": document.get("doc_type", "consular_process"),
+                "jurisdiction": document.get("jurisdiction", "federal"),
+            }
+            for document in documents
+        ],
+    }
+
+
+def normalize_consular_post(value: str) -> str | None:
+    normalized = value.strip().casefold()
+    normalized = normalized.replace("á", "a").replace("é", "e")
+    normalized = " ".join(normalized.replace("-", " ").split())
+    if normalized in {"cdj", "ciudad juarez", "ciudad juarez mexico"}:
+        return "CDJ"
+    return None
+
+
 def search_uscis_policy_manual_chunks(
     query: str,
     *,

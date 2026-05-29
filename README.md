@@ -66,6 +66,7 @@ Open `http://127.0.0.1:5173`.
 
 - USCIS Policy Manual Volume 9 Part B and Part H are ingested as Atlas `chunks` with 3072-dimensional Google Vertex AI embeddings.
 - USCIS Form I-601A, Form I-130, and G-1055 fee metadata are ingested as curated Atlas `forms` records.
+- CDJ post instructions and NVC consular-processing timeline facts are ingested as curated Atlas `consular_processes` records.
 - Runtime retrieval uses `vector_google_embedding_index` plus `fts_index`.
 
 Useful checks:
@@ -74,7 +75,9 @@ Useful checks:
 cd C:\Users\trash\Documents\Lucero\backend
 .\.venv\Scripts\python.exe -m app.smoke_tests.real_policy_retrieval
 .\.venv\Scripts\python.exe -m app.smoke_tests.forms_lookup
+.\.venv\Scripts\python.exe -m app.smoke_tests.consular_process
 .\.venv\Scripts\python.exe -m app.smoke_tests.api_chat_sources
+.\.venv\Scripts\python.exe -m app.smoke_tests.api_chat_cdj_timeline
 ```
 
 Run focused MVP evals from the repository root:

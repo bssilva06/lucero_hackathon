@@ -6,7 +6,12 @@ from google.adk.agents import Agent
 from google.adk.tools import FunctionTool
 from google.adk.tools.mcp_tool import StdioConnectionParams, McpToolset
 from app.config import load_settings, redact_secret
-from app.retrieval import check_visa_bulletin, lookup_uscis_form, search_uscis_policy_manual
+from app.retrieval import (
+    check_visa_bulletin,
+    lookup_consular_process,
+    lookup_uscis_form,
+    search_uscis_policy_manual,
+)
 
 logger = logging.getLogger("lucero.agent")
 
@@ -39,9 +44,11 @@ async def create_lucero_agent() -> Agent:
     tools.append(FunctionTool(search_uscis_policy_manual))
     tools.append(FunctionTool(lookup_uscis_form))
     tools.append(FunctionTool(check_visa_bulletin))
+    tools.append(FunctionTool(lookup_consular_process))
     logger.info("Registered canonical retrieval tool: search_uscis_policy_manual")
     logger.info("Registered canonical form lookup tool: lookup_uscis_form")
     logger.info("Registered canonical visa bulletin tool: check_visa_bulletin")
+    logger.info("Registered canonical consular process lookup tool: lookup_consular_process")
 
     # Initialize the Google ADK Agent
     agent = Agent(
@@ -55,6 +62,7 @@ async def create_lucero_agent() -> Agent:
             "1. Ground every factual claim in retrieved source authority by invoking search_uscis_policy_manual, lookup_uscis_form, or the MongoDB MCP tools (e.g. aggregate or find).\n"
             "1a. Use lookup_uscis_form for USCIS filing fees, edition dates, filing locations, filing methods, and form-specific instructions. When citing fee facts from lookup_uscis_form, cite USCIS G-1055 explicitly and do not add fee components that are not present in the tool result.\n"
             "1b. Use check_visa_bulletin for Visa Bulletin category/country/month questions and identify both the DOS chart value and the USCIS chart selected for adjustment of status.\n"
+            "1c. Use lookup_consular_process for CDJ/NVC consular-processing timeline, interview, medical exam, ASC biometrics, documentarily-complete, and post-specific questions.\n"
             "2. Always cite your sources with relevant detail (e.g., Policy Manual section, CFR or INA section) and state the 'current as of' date if available.\n"
             "3. If the retrieved database documents do not contain the answer, say so explicitly and refuse to invent details from your parametric memory.\n"
             "4. Detect the language of the user's message and respond in that same language (English or Spanish).\n"

@@ -14,7 +14,11 @@ from google.genai.types import Content, Part
 
 from app.agent import create_lucero_agent
 from app.config import load_settings
-from app.retrieval import search_uscis_policy_manual, search_uscis_policy_manual_text
+from app.retrieval import (
+    lookup_consular_process,
+    search_uscis_policy_manual,
+    search_uscis_policy_manual_text,
+)
 
 # Configure logging
 logging.basicConfig(
@@ -204,6 +208,12 @@ async def chat_endpoint(request: ChatRequest):
                             captured_sources=captured_sources,
                             captured_source_ids=captured_source_ids,
                         )
+                    if resp.name == "lookup_consular_process":
+                        _append_consular_sources(
+                            resp_data,
+                            captured_sources=captured_sources,
+                            captured_source_ids=captured_source_ids,
+                        )
 
         return ChatResponse(
             response=final_response_text.strip(),
@@ -328,19 +338,38 @@ def _policy_manual_fast_path(message: str) -> ChatResponse | None:
         captured_sources=captured_sources,
         captured_source_ids=captured_source_ids,
     )
+    tool_calls = [
+        ToolTrace(
+            name="search_uscis_policy_manual",
+            arguments={"query": query, "limit": 5},
+            response=tool_response,
+        )
+    ]
+
+    consular_response = None
+    if _should_include_consular_process(message):
+        consular_response = lookup_consular_process("I-601A timeline", post="CDJ")
+        _append_consular_sources(
+            consular_response,
+            captured_sources=captured_sources,
+            captured_source_ids=captured_source_ids,
+        )
+        tool_calls.append(
+            ToolTrace(
+                name="lookup_consular_process",
+                arguments={"topic": "I-601A timeline", "post": "CDJ"},
+                response=consular_response,
+            )
+        )
+        response = _add_consular_timeline_context(response, consular_response)
+
     citations = _citation_summary(captured_sources)
     if citations:
         response = f"{response}\n\nSources: {citations}."
 
     return ChatResponse(
         response=response,
-        tool_calls=[
-            ToolTrace(
-                name="search_uscis_policy_manual",
-                arguments={"query": query, "limit": 5},
-                response=tool_response,
-            )
-        ],
+        tool_calls=tool_calls,
         sources=captured_sources,
     )
 
@@ -379,9 +408,8 @@ def _policy_manual_route(message: str) -> tuple[str, str, str] | None:
                 "For a Mexican spouse consular-processing through Ciudad Juarez (CDJ), "
                 "the research path is generally: confirm immigrant-visa eligibility, screen for "
                 "provisional unlawful presence waiver eligibility, file Form I-601A before the "
-                "immigrant visa interview, then continue with consular processing after USCIS acts. "
-                "The Policy Manual materials retrieved here cover the I-601A/provisional unlawful "
-                "presence waiver side; CDJ/NVC post-specific timing still needs consular source ingestion."
+                "immigrant visa interview, then continue with NVC and CDJ consular processing "
+                "after USCIS acts."
             ),
             "text",
         )
@@ -435,6 +463,105 @@ def _policy_manual_route(message: str) -> tuple[str, str, str] | None:
         )
 
     return None
+
+
+def _should_include_consular_process(message: str) -> bool:
+    normalized = message.casefold()
+    return any(
+        term in normalized
+        for term in [
+            "cdj",
+            "ciudad juarez",
+            "ciudad juárez",
+            "nvc",
+            "consular",
+            "interview",
+            "medical",
+            "asc",
+        ]
+    )
+
+
+def _add_consular_timeline_context(response: str, tool_response: Any) -> str:
+    if not isinstance(tool_response, dict) or not tool_response.get("found"):
+        return response
+
+    return (
+        f"{response} After NVC document review, NVC may issue a documentarily-complete notice "
+        "and work with the appropriate embassy or consulate to schedule the interview. For CDJ, "
+        "the applicant should register the appointment, complete ASC photos/fingerprints before "
+        "the Consulate interview, schedule the medical exam in Mexico, bring required originals "
+        "and checklist documents, and avoid travel plans until adjudication is complete."
+    )
+
+
+def _append_consular_sources(
+    tool_response: Any,
+    *,
+    captured_sources: list[SourceChunk],
+    captured_source_ids: set[str],
+) -> None:
+    if not isinstance(tool_response, dict):
+        logger.warning("lookup_consular_process returned non-dict response: %s", type(tool_response))
+        return
+
+    records = tool_response.get("records")
+    if not isinstance(records, list):
+        logger.warning("lookup_consular_process response did not include list records.")
+        return
+
+    for record in records:
+        source = _source_chunk_from_consular_record(record)
+        if not source:
+            continue
+        if source.chunk_id in captured_source_ids:
+            continue
+        captured_source_ids.add(source.chunk_id)
+        captured_sources.append(source)
+
+
+def _source_chunk_from_consular_record(record: Any) -> SourceChunk | None:
+    if not isinstance(record, dict):
+        logger.warning("Skipping malformed consular record: %s", type(record))
+        return None
+
+    record_id = record.get("record_id")
+    if not record_id:
+        logger.warning("Skipping consular record without record_id.")
+        return None
+
+    timeline_steps = record.get("timeline_steps", [])
+    step_texts = []
+    if isinstance(timeline_steps, list):
+        step_texts = [
+            str(step.get("text"))
+            for step in timeline_steps
+            if isinstance(step, dict) and step.get("text")
+        ]
+
+    source_urls = record.get("source_urls", {})
+    source_url = None
+    if isinstance(source_urls, dict) and source_urls:
+        source_url = str(next(iter(source_urls.values())))
+
+    text = " ".join([str(record.get("summary") or ""), *step_texts]).strip()
+    return SourceChunk(
+        chunk_id=str(record_id),
+        section_citation=_optional_string(record.get("section_citation")),
+        source_url=source_url,
+        text=text,
+        doc_id=str(record_id),
+        doc_type=_optional_string(record.get("doc_type")) or "consular_process",
+        agency=_optional_string(record.get("agency")) or "DOS",
+        jurisdiction=_optional_string(record.get("jurisdiction")) or "federal",
+        section_path=[str(record.get("post") or "CDJ"), str(record.get("title") or "")],
+        version_label=None,
+        retrieval_date=_optional_string(record.get("retrieval_date")),
+        effective_from=None,
+        effective_to=None,
+        content_hash=_optional_string(record.get("content_hash")),
+        score=None,
+    )
 
 
 def _citation_summary(sources: list[SourceChunk]) -> str:

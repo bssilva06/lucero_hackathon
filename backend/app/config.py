@@ -22,6 +22,7 @@ class Settings:
     mongo_chunks_collection: str
     mongo_forms_collection: str
     mongo_visa_bulletins_collection: str
+    mongo_consular_processes_collection: str
     mongo_query_logs_collection: str
     use_rank_fusion: bool
     use_atlas_automated_embedding: bool
@@ -51,6 +52,10 @@ def load_settings() -> Settings:
         mongo_visa_bulletins_collection=os.getenv(
             "MONGO_VISA_BULLETINS_COLLECTION",
             "visa_bulletins",
+        ),
+        mongo_consular_processes_collection=os.getenv(
+            "MONGO_CONSULAR_PROCESSES_COLLECTION",
+            "consular_processes",
         ),
         mongo_query_logs_collection=os.getenv("MONGO_QUERY_LOGS_COLLECTION", "query_logs"),
         use_rank_fusion=_bool("LUCERO_USE_RANK_FUSION", default=True),

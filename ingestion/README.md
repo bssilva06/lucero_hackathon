@@ -9,7 +9,7 @@ Source fetching, parsing, chunking, and MongoDB Atlas loading for the Lucero MVP
 - USCIS Policy Manual Vol. 6 Pt. B
 - I-601A and I-130 instruction PDFs
 - Last 3 Visa Bulletins
-- Ciudad Juarez consular post information
+- Ciudad Juarez consular post information and NVC interview-process instructions
 - G-1055 fee schedule
 
 ## Design Notes
@@ -104,3 +104,14 @@ backend\.venv\Scripts\python.exe ingestion\scripts\ingest_uscis_forms.py
 ```
 
 This upserts Form I-601A, Form I-130, and G-1055 fee metadata into Atlas `forms`.
+
+## CDJ/NVC Consular Process Ingestion
+
+Seed curated official-source records for CDJ immigrant visa interview preparation and NVC document/interview steps:
+
+```powershell
+cd C:\Users\trash\Documents\Lucero
+backend\.venv\Scripts\python.exe ingestion\scripts\ingest_consular_processes.py
+```
+
+This upserts DOS/NVC records into Atlas `consular_processes` for `lookup_consular_process`.

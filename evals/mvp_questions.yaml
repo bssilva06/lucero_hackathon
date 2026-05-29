@@ -13,10 +13,12 @@ questions:
     prompt: "Walk me through the I-601A timeline for a Mexican spouse going to CDJ."
     expected_behavior: "Use multiple tools and cite USCIS Policy Manual, 8 CFR 212.7(e), and CDJ source material."
     requires_sources: true
-    expected_tool_names: ["search_uscis_policy_manual"]
-    citation_prefixes: ["9 USCIS-PM H"]
+    expected_tool_names: ["search_uscis_policy_manual", "lookup_consular_process"]
+    required_citation_prefixes: ["9 USCIS-PM H", "CDJ Post Instructions", "NVC"]
+    citation_prefixes: ["9 USCIS-PM H", "CDJ Post Instructions", "NVC"]
     forbid_chunk_prefixes: ["fixture-"]
-    must_include_any: ["I-601A", "provisional unlawful presence", "Ciudad Juarez", "CDJ"]
+    must_include_any: ["I-601A", "provisional unlawful presence", "Ciudad Juarez", "CDJ", "NVC", "medical", "ASC"]
+    must_include_all: ["I-601A", "provisional unlawful presence", "Ciudad Juarez", "CDJ", "NVC", "medical", "ASC"]
   - id: ten-year-bar-waiver
     language: EN
     prompt: "Client has 10-year bar under INA 212(a)(9)(B)(i)(II). What waivers are available and what's the qualifying-relative standard?"
