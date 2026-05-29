@@ -35,6 +35,7 @@ def search_source_chunks(
     filters: RetrievalFilters | None = None,
     limit: int = DEFAULT_LIMIT,
     settings: Settings | None = None,
+    text_only: bool = False,
 ) -> list[dict[str, Any]]:
     """Search source chunks with Google query embeddings and Atlas hybrid retrieval."""
     if not query.strip():
@@ -45,27 +46,30 @@ def search_source_chunks(
     client = MongoClient(settings.mongo_uri, serverSelectionTimeoutMS=10_000)
     try:
         collection = client[settings.mongo_db][settings.mongo_chunks_collection]
-        try:
-            query_vector = embed_texts(
-                [query],
-                project_id=settings.google_cloud_project,
-                location=settings.google_cloud_location,
-                model=settings.google_embedding_model,
-                input_type="query",
-                output_dimensionality=settings.vector_dimensions,
-                metadata_timeout_seconds=settings.embedding_metadata_timeout_seconds,
-            )[0]
-            pipeline = (
-                rank_fusion_pipeline(settings, query, query_vector, filters=filters, limit=limit)
-                if settings.use_rank_fusion
-                else vector_search_pipeline(settings, query_vector, filters=filters, limit=limit)
-            )
-        except Exception as exc:
-            logger.warning(
-                "Vertex query embedding failed; falling back to Atlas text search: %s",
-                exc,
-            )
+        if text_only:
             pipeline = text_search_pipeline(settings, query, filters=filters, limit=limit)
+        else:
+            try:
+                query_vector = embed_texts(
+                    [query],
+                    project_id=settings.google_cloud_project,
+                    location=settings.google_cloud_location,
+                    model=settings.google_embedding_model,
+                    input_type="query",
+                    output_dimensionality=settings.vector_dimensions,
+                    metadata_timeout_seconds=settings.embedding_metadata_timeout_seconds,
+                )[0]
+                pipeline = (
+                    rank_fusion_pipeline(settings, query, query_vector, filters=filters, limit=limit)
+                    if settings.use_rank_fusion
+                    else vector_search_pipeline(settings, query_vector, filters=filters, limit=limit)
+                )
+            except Exception as exc:
+                logger.warning(
+                    "Vertex query embedding failed; falling back to Atlas text search: %s",
+                    exc,
+                )
+                pipeline = text_search_pipeline(settings, query, filters=filters, limit=limit)
         try:
             return [_normalize_result(result) for result in collection.aggregate(pipeline)]
         except OperationFailure as exc:
@@ -91,6 +95,15 @@ def search_uscis_policy_manual(
 ) -> dict[str, Any]:
     """Search active USCIS Policy Manual source chunks and return citation-ready results."""
     return search_uscis_policy_manual_chunks(query, limit=limit)
+
+
+def search_uscis_policy_manual_text(
+    query: str,
+    *,
+    limit: int = DEFAULT_LIMIT,
+) -> dict[str, Any]:
+    """Search active USCIS Policy Manual chunks with Atlas text search only."""
+    return search_uscis_policy_manual_chunks(query, limit=limit, text_only=True)
 
 
 def lookup_uscis_form(form_number: str) -> dict[str, Any]:
@@ -239,6 +252,7 @@ def search_uscis_policy_manual_chunks(
     *,
     limit: int = DEFAULT_LIMIT,
     ingestion_run_id: str | None = None,
+    text_only: bool = False,
 ) -> dict[str, Any]:
     """Search active USCIS Policy Manual chunks with optional test-only run filtering."""
     settings = load_settings()
@@ -249,10 +263,20 @@ def search_uscis_policy_manual_chunks(
         ingestion_run_id=ingestion_run_id,
         exclude_ingestion_run_ids=() if ingestion_run_id else ("fixture-smoke-test",),
     )
-    results = search_source_chunks(query, filters=filters, limit=limit, settings=settings)
+    results = search_source_chunks(
+        query,
+        filters=filters,
+        limit=limit,
+        settings=settings,
+        text_only=text_only,
+    )
     return {
         "query": query,
-        "retrieval_mode": "hybrid_rank_fusion" if settings.use_rank_fusion else "vector_search",
+        "retrieval_mode": (
+            "text_search"
+            if text_only
+            else "hybrid_rank_fusion" if settings.use_rank_fusion else "vector_search"
+        ),
         "results": results,
     }
 

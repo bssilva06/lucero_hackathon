@@ -14,7 +14,7 @@ from google.genai.types import Content, Part
 
 from app.agent import create_lucero_agent
 from app.config import load_settings
-from app.retrieval import search_uscis_policy_manual
+from app.retrieval import search_uscis_policy_manual, search_uscis_policy_manual_text
 
 # Configure logging
 logging.basicConfig(
@@ -314,8 +314,13 @@ def _policy_manual_fast_path(message: str) -> ChatResponse | None:
     if not route:
         return None
 
-    query, response = route
-    tool_response = search_uscis_policy_manual(query, limit=5)
+    query, response, retrieval_mode = route
+    search_tool = (
+        search_uscis_policy_manual_text
+        if retrieval_mode == "text"
+        else search_uscis_policy_manual
+    )
+    tool_response = search_tool(query, limit=5)
     captured_sources: list[SourceChunk] = []
     captured_source_ids: set[str] = set()
     _append_source_chunks(
@@ -340,7 +345,7 @@ def _policy_manual_fast_path(message: str) -> ChatResponse | None:
     )
 
 
-def _policy_manual_route(message: str) -> tuple[str, str] | None:
+def _policy_manual_route(message: str) -> tuple[str, str, str] | None:
     normalized = message.casefold()
     asks_fee_or_location = any(
         term in normalized
@@ -348,6 +353,24 @@ def _policy_manual_route(message: str) -> tuple[str, str] | None:
     )
     if asks_fee_or_location:
         return None
+
+    if (
+        "i-601" in normalized
+        and "i-601a" in normalized
+        and any(term in normalized for term in [" vs ", "versus", "diferencias", "differences", "resume"])
+    ):
+        return (
+            "I-601 I-601A provisional unlawful presence waiver consular processing Volume 9 Part H",
+            (
+                "En resumen, la I-601A es una exención provisional limitada a presencia ilegal antes "
+                "de la salida para el proceso consular, mientras que la I-601 se usa para pedir ciertas "
+                "exenciones después de que se identifica una causal aplicable. Para un caso que va a "
+                "CDJ, la diferencia práctica es el momento, el alcance de la causal y el riesgo de "
+                "salir sin una exención provisional aprobada. Para la ruta de I-601A, revise "
+                "9 USCIS-PM H junto con las fuentes recuperadas."
+            ),
+            "text",
+        )
 
     if "i-601a" in normalized and any(term in normalized for term in ["timeline", "cdj"]):
         return (
@@ -360,6 +383,7 @@ def _policy_manual_route(message: str) -> tuple[str, str] | None:
                 "The Policy Manual materials retrieved here cover the I-601A/provisional unlawful "
                 "presence waiver side; CDJ/NVC post-specific timing still needs consular source ingestion."
             ),
+            "text",
         )
 
     if "10-year" in normalized or "10 year" in normalized or "212(a)(9)(b)" in normalized:
@@ -371,6 +395,7 @@ def _policy_manual_route(message: str) -> tuple[str, str] | None:
                 "relative. The available Policy Manual sources discuss how USCIS evaluates extreme "
                 "hardship factors; this is legal research support, not an outcome prediction."
             ),
+            "hybrid",
         )
 
     if "i-485" in normalized and ("consular" in normalized or "entered without inspection" in normalized):
@@ -383,6 +408,7 @@ def _policy_manual_route(message: str) -> tuple[str, str] | None:
                 "waiver relevant before departure, assuming the only inadmissibility ground to waive "
                 "is unlawful presence and the other eligibility requirements are met."
             ),
+            "text",
         )
 
     if "extreme hardship" in normalized or "hardship" in normalized:
@@ -393,6 +419,7 @@ def _policy_manual_route(message: str) -> tuple[str, str] | None:
                 "as medical needs, family ties, care responsibilities for children, financial impact, "
                 "country conditions, and the cumulative effect on the qualifying relative."
             ),
+            "hybrid",
         )
 
     if "orden" in normalized and ("remoción" in normalized or "remocion" in normalized):
@@ -404,18 +431,7 @@ def _policy_manual_route(message: str) -> tuple[str, str] | None:
                 "efecto procesal antes de salir; la respuesta debe basarse en las reglas citadas, "
                 "no en una predicción."
             ),
-        )
-
-    if "i-601" in normalized and "i-601a" in normalized:
-        return (
-            "I-601 I-601A provisional unlawful presence waiver consular processing Volume 9 Part H",
-            (
-                "En resumen, la I-601A es una exención provisional limitada a presencia ilegal antes "
-                "de la salida para el proceso consular, mientras que la I-601 se usa para pedir ciertas "
-                "exenciones después de que se identifica una causal aplicable. Para un caso que va a "
-                "CDJ, la diferencia práctica es el momento, el alcance de la causal y el riesgo de "
-                "salir sin una exención provisional aprobada."
-            ),
+            "text",
         )
 
     return None
