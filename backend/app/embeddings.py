@@ -20,6 +20,7 @@ def embed_texts(
     batch_size: int = DEFAULT_EMBEDDING_BATCH_SIZE,
     request_delay_seconds: float = 0,
     max_retries: int = DEFAULT_MAX_RETRIES,
+    metadata_timeout_seconds: int | None = None,
 ) -> list[list[float]]:
     import vertexai
     from vertexai.language_models import TextEmbeddingInput, TextEmbeddingModel
@@ -29,6 +30,8 @@ def embed_texts(
 
     task_type = _task_type(input_type)
     vertexai.init(project=project_id, location=location)
+    if metadata_timeout_seconds is not None:
+        _configure_vertex_metadata_timeout(metadata_timeout_seconds)
     embedding_model = TextEmbeddingModel.from_pretrained(model)
     kwargs = (
         {"output_dimensionality": output_dimensionality}
@@ -84,3 +87,16 @@ def _get_embedding_with_retry(
 def _is_quota_error(exc: Exception) -> bool:
     message = str(exc).lower()
     return "429" in message or "quota" in message or "resource exhausted" in message
+
+
+def _configure_vertex_metadata_timeout(timeout_seconds: int) -> None:
+    """Bound Vertex model metadata retries so retrieval can fall back quickly."""
+    try:
+        from google.cloud.aiplatform import base
+    except Exception:
+        return
+
+    default_retry = getattr(base, "_DEFAULT_RETRY", None)
+    if not default_retry or not hasattr(default_retry, "with_timeout"):
+        return
+    base._DEFAULT_RETRY = default_retry.with_timeout(timeout_seconds)

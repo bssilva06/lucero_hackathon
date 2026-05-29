@@ -1,12 +1,16 @@
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from typing import Any
 
 from pymongo import MongoClient
+from pymongo.errors import OperationFailure
 
 from app.config import Settings, load_settings
 from app.embeddings import embed_texts
+
+logger = logging.getLogger("lucero.retrieval")
 
 
 DEFAULT_LIMIT = 5
@@ -38,24 +42,44 @@ def search_source_chunks(
 
     settings = settings or load_settings()
     filters = filters or RetrievalFilters()
-    query_vector = embed_texts(
-        [query],
-        project_id=settings.google_cloud_project,
-        location=settings.google_cloud_location,
-        model=settings.google_embedding_model,
-        input_type="query",
-        output_dimensionality=settings.vector_dimensions,
-    )[0]
-
     client = MongoClient(settings.mongo_uri, serverSelectionTimeoutMS=10_000)
     try:
         collection = client[settings.mongo_db][settings.mongo_chunks_collection]
-        pipeline = (
-            rank_fusion_pipeline(settings, query, query_vector, filters=filters, limit=limit)
-            if settings.use_rank_fusion
-            else vector_search_pipeline(settings, query_vector, filters=filters, limit=limit)
-        )
-        return [_normalize_result(result) for result in collection.aggregate(pipeline)]
+        try:
+            query_vector = embed_texts(
+                [query],
+                project_id=settings.google_cloud_project,
+                location=settings.google_cloud_location,
+                model=settings.google_embedding_model,
+                input_type="query",
+                output_dimensionality=settings.vector_dimensions,
+                metadata_timeout_seconds=settings.embedding_metadata_timeout_seconds,
+            )[0]
+            pipeline = (
+                rank_fusion_pipeline(settings, query, query_vector, filters=filters, limit=limit)
+                if settings.use_rank_fusion
+                else vector_search_pipeline(settings, query_vector, filters=filters, limit=limit)
+            )
+        except Exception as exc:
+            logger.warning(
+                "Vertex query embedding failed; falling back to Atlas text search: %s",
+                exc,
+            )
+            pipeline = text_search_pipeline(settings, query, filters=filters, limit=limit)
+        try:
+            return [_normalize_result(result) for result in collection.aggregate(pipeline)]
+        except OperationFailure as exc:
+            if not _should_retry_with_text_search(exc):
+                raise
+            logger.warning(
+                "Atlas vector search failed; retrying with text search: %s",
+                exc,
+            )
+            fallback_pipeline = text_search_pipeline(settings, query, filters=filters, limit=limit)
+            return [
+                _normalize_result(result)
+                for result in collection.aggregate(fallback_pipeline)
+            ]
     finally:
         client.close()
 
@@ -380,3 +404,11 @@ def _normalize_result(result: dict[str, Any]) -> dict[str, Any]:
         "content_hash": result.get("content_hash"),
         "score": result.get("score"),
     }
+
+
+def _should_retry_with_text_search(exc: OperationFailure) -> bool:
+    message = str(exc).lower()
+    return (
+        "vector" in message
+        and any(term in message for term in ["dimension", "indexed", "index"])
+    )

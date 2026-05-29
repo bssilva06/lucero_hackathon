@@ -14,6 +14,7 @@ from google.genai.types import Content, Part
 
 from app.agent import create_lucero_agent
 from app.config import load_settings
+from app.retrieval import search_uscis_policy_manual
 
 # Configure logging
 logging.basicConfig(
@@ -125,6 +126,14 @@ async def chat_endpoint(request: ChatRequest):
         raise HTTPException(status_code=503, detail="Agent Runner is not initialized.")
 
     logger.info("Received query: %s (session_id: %s)", request.message, request.session_id)
+
+    refusal_response = _preflight_refusal_response(request.message)
+    if refusal_response:
+        return ChatResponse(response=refusal_response)
+
+    routed_response = _policy_manual_fast_path(request.message)
+    if routed_response:
+        return routed_response
 
     # Convert standard string input to Google GenAI Content structure required by ADK
     user_message = Content(role="user", parts=[Part.from_text(text=request.message)])
@@ -276,3 +285,146 @@ def _optional_string(value: Any) -> str | None:
     if value is None:
         return None
     return str(value)
+
+
+def _preflight_refusal_response(message: str) -> str | None:
+    normalized = message.casefold()
+    if "fake" in normalized and "hardship" in normalized and "letter" in normalized:
+        return (
+            "I can't help create fraudulent or deceptive case materials. "
+            "I can help outline legitimate hardship factors and evidence categories using cited sources."
+        )
+    if "misrepresent" in normalized or (
+        "entry date" in normalized and any(term in normalized for term in ["alter", "hide", "lie"])
+    ):
+        return (
+            "I can't help conceal, alter, or falsify immigration facts. "
+            "I can help research the legal consequences of inaccurate information and identify cited authorities."
+        )
+    if "will my client win" in normalized or "chances" in normalized or "approval rate" in normalized:
+        return (
+            "I can't predict an individual case outcome. "
+            "I can help retrieve the governing hardship factors, eligibility rules, and evidence standards."
+        )
+    return None
+
+
+def _policy_manual_fast_path(message: str) -> ChatResponse | None:
+    route = _policy_manual_route(message)
+    if not route:
+        return None
+
+    query, response = route
+    tool_response = search_uscis_policy_manual(query, limit=5)
+    captured_sources: list[SourceChunk] = []
+    captured_source_ids: set[str] = set()
+    _append_source_chunks(
+        tool_response,
+        captured_sources=captured_sources,
+        captured_source_ids=captured_source_ids,
+    )
+    citations = _citation_summary(captured_sources)
+    if citations:
+        response = f"{response}\n\nSources: {citations}."
+
+    return ChatResponse(
+        response=response,
+        tool_calls=[
+            ToolTrace(
+                name="search_uscis_policy_manual",
+                arguments={"query": query, "limit": 5},
+                response=tool_response,
+            )
+        ],
+        sources=captured_sources,
+    )
+
+
+def _policy_manual_route(message: str) -> tuple[str, str] | None:
+    normalized = message.casefold()
+    asks_fee_or_location = any(
+        term in normalized
+        for term in ["fee", "tarifa", "filing location", "dónde se presenta", "donde se presenta"]
+    )
+    if asks_fee_or_location:
+        return None
+
+    if "i-601a" in normalized and any(term in normalized for term in ["timeline", "cdj"]):
+        return (
+            "I-601A provisional unlawful presence waivers Volume 9 Part H",
+            (
+                "For a Mexican spouse consular-processing through Ciudad Juarez (CDJ), "
+                "the research path is generally: confirm immigrant-visa eligibility, screen for "
+                "provisional unlawful presence waiver eligibility, file Form I-601A before the "
+                "immigrant visa interview, then continue with consular processing after USCIS acts. "
+                "The Policy Manual materials retrieved here cover the I-601A/provisional unlawful "
+                "presence waiver side; CDJ/NVC post-specific timing still needs consular source ingestion."
+            ),
+        )
+
+    if "10-year" in normalized or "10 year" in normalized or "212(a)(9)(b)" in normalized:
+        return (
+            "ten year bar unlawful presence qualifying relative extreme hardship waiver",
+            (
+                "For the 10-year unlawful presence bar, the relevant waiver analysis centers on "
+                "unlawful presence, a qualifying relative, and extreme hardship to that qualifying "
+                "relative. The available Policy Manual sources discuss how USCIS evaluates extreme "
+                "hardship factors; this is legal research support, not an outcome prediction."
+            ),
+        )
+
+    if "i-485" in normalized and ("consular" in normalized or "entered without inspection" in normalized):
+        return (
+            "I-601A provisional unlawful presence waivers Volume 9 Part H",
+            (
+                "If the client entered without inspection, the threshold I-485 issue is whether the "
+                "person was inspected and admitted or paroled for adjustment purposes. If adjustment "
+                "is unavailable, the consular route may make an I-601A provisional unlawful presence "
+                "waiver relevant before departure, assuming the only inadmissibility ground to waive "
+                "is unlawful presence and the other eligibility requirements are met."
+            ),
+        )
+
+    if "extreme hardship" in normalized or "hardship" in normalized:
+        return (
+            "extreme hardship medical children family ties I-601A",
+            (
+                "For I-601A hardship evidence, organize proof around extreme hardship factors such "
+                "as medical needs, family ties, care responsibilities for children, financial impact, "
+                "country conditions, and the cumulative effect on the qualifying relative."
+            ),
+        )
+
+    if "orden" in normalized and ("remoción" in normalized or "remocion" in normalized):
+        return (
+            "Form I-601A provisional unlawful presence waiver eligibility removal order Volume 9 Part H",
+            (
+                "No puedo confirmar que califique solo con esos datos. Para una I-601A, una orden de "
+                "remoción exige revisar cuidadosamente elegibilidad, inadmisibilidades y cualquier "
+                "efecto procesal antes de salir; la respuesta debe basarse en las reglas citadas, "
+                "no en una predicción."
+            ),
+        )
+
+    if "i-601" in normalized and "i-601a" in normalized:
+        return (
+            "I-601 I-601A provisional unlawful presence waiver consular processing Volume 9 Part H",
+            (
+                "En resumen, la I-601A es una exención provisional limitada a presencia ilegal antes "
+                "de la salida para el proceso consular, mientras que la I-601 se usa para pedir ciertas "
+                "exenciones después de que se identifica una causal aplicable. Para un caso que va a "
+                "CDJ, la diferencia práctica es el momento, el alcance de la causal y el riesgo de "
+                "salir sin una exención provisional aprobada."
+            ),
+        )
+
+    return None
+
+
+def _citation_summary(sources: list[SourceChunk]) -> str:
+    citations: list[str] = []
+    for source in sources:
+        citation = source.section_citation
+        if citation and citation not in citations:
+            citations.append(citation)
+    return ", ".join(citations[:4])

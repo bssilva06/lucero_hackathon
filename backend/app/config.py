@@ -27,6 +27,7 @@ class Settings:
     use_atlas_automated_embedding: bool
     vector_index: str
     vector_dimensions: int
+    embedding_metadata_timeout_seconds: int
     fts_index: str
     google_embedding_model: str
     gemini_reasoning_model: str
@@ -56,6 +57,10 @@ def load_settings() -> Settings:
         use_atlas_automated_embedding=_bool("LUCERO_USE_ATLAS_AUTOMATED_EMBEDDING", default=False),
         vector_index=os.getenv("LUCERO_VECTOR_INDEX", "vector_google_embedding_index"),
         vector_dimensions=_int("LUCERO_VECTOR_DIMENSIONS", default=3072),
+        embedding_metadata_timeout_seconds=_int(
+            "LUCERO_EMBEDDING_METADATA_TIMEOUT_SECONDS",
+            default=20,
+        ),
         fts_index=os.getenv("LUCERO_FTS_INDEX", "fts_index"),
         google_embedding_model=os.getenv("GOOGLE_EMBEDDING_MODEL", "gemini-embedding-001"),
         gemini_reasoning_model=os.getenv("GEMINI_REASONING_MODEL", "gemini-3.5-flash"),
